@@ -465,7 +465,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const lightToggle = document.getElementById('lightToggle');
   const favoriteLightToggle = document.getElementById('favoriteLightToggle');
   const autoLightToggle = document.getElementById('autoLightToggle');
-  const autoLightStatus = document.getElementById('autoLightStatus');
   const motionStatusCard = document.getElementById('motionStatusCard');
   const motionStatusIcon = document.getElementById('motionStatusIcon');
   const motionStatusValue = document.getElementById('motionStatusValue');
@@ -1021,10 +1020,9 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const updateAutoLightUi = (isOn) => {
-    if (!autoLightStatus) return;
-
-    autoLightStatus.textContent = isOn ? 'Auto bật' : 'Auto tắt';
-    autoLightStatus.style.color = isOn ? '#2a5ea9' : '#5d6775';
+    if (autoLightToggle && autoLightToggle.checked !== isOn) {
+      autoLightToggle.checked = isOn;
+    }
   };
 
   const handleLightToggleChange = (isOn) => {
