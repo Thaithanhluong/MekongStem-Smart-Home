@@ -110,17 +110,59 @@ document.addEventListener('DOMContentLoaded', function() {
   const rgbStatus = document.getElementById('rgbLedStatus');
   const colorButtons = document.querySelectorAll('.honeycomb-cell');
   const rgbToggle = rgbCard?.querySelector('.toggle-checkbox');
+  const fanCard = document.getElementById('fanCard');
+  const fanIcon = document.getElementById('fanIcon');
+  const fanStatus = document.getElementById('fanStatus');
+  const fanToggle = document.getElementById('fanToggle');
+  const fanSpeedSlider = document.getElementById('fanSpeedSlider');
+  const fanSpeedValue = document.getElementById('fanSpeedValue');
+  const motionStatusCard = document.getElementById('motionStatusCard');
+  const motionStatusIcon = document.getElementById('motionStatusIcon');
+  const motionStatusValue = document.getElementById('motionStatusValue');
+  const motionStatusText = document.getElementById('motionStatusText');
+  const alertsList = document.getElementById('alertsList');
 
   if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
 
   const mqttConfig = {
     url: 'wss://test.mosquitto.org:8081/mqtt',
-    stateTopic: 'mekongstem/smart-home/led-rgb/state/set',
-    colorTopic: 'mekongstem/smart-home/led-rgb/color/set',
+    rgbStateTopic: 'mekongstem/smart-home/led-rgb/state/set',
+    rgbColorTopic: 'mekongstem/smart-home/led-rgb/color/set',
+    fanStateTopic: 'mekongstem/smart-home/fan/state/set',
+    fanSpeedTopic: 'mekongstem/smart-home/fan/speed/set',
+    motionTopic: 'mekongstem/smart-home/motion/status',
   };
   let mqttClient = null;
   let isMqttConnected = false;
   let pendingRgbMessages = [];
+  let motionResetTimer = null;
+  let lastMotionAlertTime = 0;
+  const alerts = [
+    {
+      title: 'Phát hiện khí gas',
+      location: 'Phòng bếp',
+      time: '10:30:15',
+      icon: 'fa-fire-flame-curved',
+      iconClass: 'bg-mekong-brown/10 text-mekong-brown',
+      timeClass: 'text-mekong-brown',
+    },
+    {
+      title: 'Phát hiện chuyển động',
+      location: 'Cửa chính',
+      time: '10:22:10',
+      icon: 'fa-person-running',
+      iconClass: 'bg-mekong-light-blue text-mekong-blue',
+      timeClass: 'text-mekong-brown',
+    },
+    {
+      title: 'Nhiệt độ cao',
+      location: 'Phòng khách',
+      time: '09:15:42',
+      icon: 'fa-temperature-high',
+      iconClass: 'bg-mekong-brown/10 text-mekong-brown',
+      timeClass: 'text-mekong-brown',
+    },
+  ];
 
   const connectMqtt = () => {
     if (mqttClient || typeof mqtt === 'undefined') return;
@@ -134,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('connect', () => {
       isMqttConnected = true;
+      mqttClient.subscribe(mqttConfig.motionTopic, { qos: 0 });
       if (pendingRgbMessages.length) {
         const messages = [...pendingRgbMessages];
         pendingRgbMessages = [];
@@ -152,6 +195,14 @@ document.addEventListener('DOMContentLoaded', function() {
     mqttClient.on('error', (error) => {
       console.warn('MQTT RGB LED error:', error.message);
     });
+
+    mqttClient.on('message', (topic, payload) => {
+      const message = payload.toString().trim();
+
+      if (topic === mqttConfig.motionTopic) {
+        handleMotionMessage(message);
+      }
+    });
   };
 
   const publishRgbMessage = (topic, message) => {
@@ -169,14 +220,150 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const sendRgbState = (isOn) => {
-    publishRgbMessage(mqttConfig.stateTopic, isOn ? 'ON' : 'OFF');
+    publishRgbMessage(mqttConfig.rgbStateTopic, isOn ? 'ON' : 'OFF');
   };
 
   const sendRgbColor = (color) => {
-    publishRgbMessage(mqttConfig.colorTopic, color);
+    publishRgbMessage(mqttConfig.rgbColorTopic, color);
+  };
+
+  const sendFanState = (isOn) => {
+    publishRgbMessage(mqttConfig.fanStateTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  const sendFanSpeed = (speed) => {
+    publishRgbMessage(mqttConfig.fanSpeedTopic, String(speed));
   };
 
   connectMqtt();
+
+  const formatCurrentTime = () => {
+    return new Date().toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  };
+
+  const renderAlerts = () => {
+    if (!alertsList) return;
+
+    alertsList.innerHTML = alerts.slice(0, 5).map((alert) => `
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 ${alert.iconClass} rounded-lg flex items-center justify-center">
+          <i class="fa-solid ${alert.icon}"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-semibold">${alert.title}</p>
+          <p class="text-xs text-slate-500">${alert.location}</p>
+        </div>
+        <span class="text-xs ${alert.timeClass} font-medium">${alert.time}</span>
+      </div>
+    `).join('');
+  };
+
+  const addMotionAlert = () => {
+    const now = Date.now();
+    if (now - lastMotionAlertTime < 5000) return;
+
+    lastMotionAlertTime = now;
+    alerts.unshift({
+      title: 'Phát hiện chuyển động',
+      location: 'Cửa chính',
+      time: formatCurrentTime(),
+      icon: 'fa-person-running',
+      iconClass: 'bg-mekong-light-blue text-mekong-blue',
+      timeClass: 'text-mekong-brown',
+    });
+    renderAlerts();
+  };
+
+  const updateMotionUi = (isDetected) => {
+    if (!motionStatusCard || !motionStatusIcon || !motionStatusValue || !motionStatusText) return;
+
+    if (isDetected) {
+      motionStatusValue.textContent = 'Có người';
+      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#5a4217"></span> Đang phát hiện';
+      motionStatusValue.style.color = '#5a4217';
+      motionStatusIcon.style.backgroundColor = '#5a4217';
+      motionStatusCard.classList.add('border-b-4');
+      motionStatusCard.style.borderBottomColor = '#5a4217';
+    } else {
+      motionStatusValue.textContent = 'Không có';
+      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#6f9fe8"></span> Không phát hiện';
+      motionStatusValue.style.color = '#0f172a';
+      motionStatusIcon.style.backgroundColor = '#1f5fbf';
+      motionStatusCard.classList.remove('border-b-4');
+      motionStatusCard.style.borderBottomColor = '#e2e8f0';
+    }
+  };
+
+  const handleMotionMessage = (message) => {
+    const normalized = message.toUpperCase();
+    const isClearMessage = ['0', 'OFF', 'NO', 'NONE', 'FALSE', 'CLEAR'].includes(normalized);
+    const isDetected = !isClearMessage;
+
+    updateMotionUi(isDetected);
+
+    if (isDetected) {
+      addMotionAlert();
+      window.clearTimeout(motionResetTimer);
+      motionResetTimer = window.setTimeout(() => updateMotionUi(false), 10000);
+    } else {
+      window.clearTimeout(motionResetTimer);
+    }
+  };
+
+  renderAlerts();
+
+  const updateFanUi = (isOn) => {
+    const speed = fanSpeedSlider?.value || '0';
+
+    if (!fanCard || !fanIcon || !fanStatus) return;
+
+    if (isOn) {
+      fanStatus.textContent = `${speed}%`;
+      fanStatus.style.color = '#1f5fbf';
+      fanIcon.style.backgroundColor = '#1f5fbf';
+      fanCard.style.borderBottomColor = '#1f5fbf';
+      fanCard.classList.add('border-b-4', 'border-mekong-blue');
+    } else {
+      fanStatus.textContent = 'Tắt';
+      fanStatus.style.color = '#94a3b8';
+      fanIcon.style.backgroundColor = '#cbd5e1';
+      fanCard.style.borderBottomColor = '#e2e8f0';
+      fanCard.classList.remove('border-b-4', 'border-mekong-blue');
+    }
+  };
+
+  if (fanToggle && fanSpeedSlider && fanSpeedValue) {
+    fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
+    updateFanUi(fanToggle.checked);
+
+    fanToggle.addEventListener('change', () => {
+      if (fanToggle.checked) {
+        sendFanSpeed(fanSpeedSlider.value);
+        sendFanState(true);
+      } else {
+        sendFanState(false);
+      }
+
+      updateFanUi(fanToggle.checked);
+    });
+
+    fanSpeedSlider.addEventListener('input', () => {
+      fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
+      updateFanUi(fanToggle.checked);
+    });
+
+    fanSpeedSlider.addEventListener('change', () => {
+      sendFanSpeed(fanSpeedSlider.value);
+      if (fanToggle.checked) {
+        sendFanState(true);
+      }
+    });
+  }
 
   const setRgbColor = (button, shouldPublish = true) => {
     const color = button.dataset.color || '#1f5fbf';

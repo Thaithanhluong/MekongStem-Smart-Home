@@ -150,14 +150,14 @@
 </div>
 </div>
 <!-- Motion -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
-<div class="w-12 h-12 bg-mekong-blue text-white rounded-full flex items-center justify-center text-xl">
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4" id="motionStatusCard">
+<div class="w-12 h-12 bg-mekong-blue text-white rounded-full flex items-center justify-center text-xl" id="motionStatusIcon">
 <i class="fa-solid fa-person-walking"></i>
 </div>
 <div>
 <p class="text-xs text-slate-500">Chuyển động</p>
-<h4 class="text-xl font-bold">Không có</h4>
-<p class="text-[10px] text-mekong-sky font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-mekong-sky mr-1"></span> Không phát hiện</p>
+<h4 class="text-xl font-bold" id="motionStatusValue">Không có</h4>
+<p class="text-[10px] text-mekong-sky font-medium" id="motionStatusText"><span class="inline-block w-1.5 h-1.5 rounded-full bg-mekong-sky mr-1" id="motionStatusDot"></span> Không phát hiện</p>
 </div>
 </div>
 </div>
@@ -183,16 +183,23 @@
 </label>
 </div>
 <!-- Fan Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2">
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2" id="fanCard">
+<div class="w-10 h-10 bg-slate-300 text-white rounded-full flex items-center justify-center" id="fanIcon">
 <i class="fa-solid fa-fan"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">Quạt</p>
-<p class="text-xs text-slate-400">Tắt</p>
+<p class="text-xs text-slate-400" id="fanStatus">Tắt</p>
+</div>
+<div class="fan-speed-control" aria-label="Tốc độ quạt">
+<div class="flex items-center justify-between w-full">
+<span class="text-[10px] text-slate-500">Tốc độ</span>
+<span class="text-[10px] font-semibold text-slate-500" id="fanSpeedValue">60%</span>
+</div>
+<input aria-label="Tốc độ quạt" class="fan-speed-slider" id="fanSpeedSlider" max="100" min="0" step="10" type="range" value="60"/>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input class="sr-only toggle-checkbox" type="checkbox"/>
+<input class="sr-only toggle-checkbox" id="fanToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
 </div>
@@ -297,7 +304,7 @@
 <div class="col-span-4" data-purpose="alerts-list">
 <h3 class="text-lg font-bold text-mekong-blue mb-4">CẢNH BÁO</h3>
 <div class="bg-white p-4 rounded-2xl card-shadow h-[calc(100%-2.5rem)] flex flex-col">
-<div class="space-y-4 flex-1">
+<div class="space-y-4 flex-1" id="alertsList">
 <!-- Alert 1 -->
 <div class="flex items-center gap-3">
 <div class="w-10 h-10 bg-mekong-brown/10 text-mekong-brown rounded-lg flex items-center justify-center">
