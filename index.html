@@ -169,18 +169,26 @@
 <h3 class="text-lg font-bold text-mekong-blue mb-4">PHÒNG KHÁCH</h3>
 <div class="grid grid-cols-3 gap-4">
 <!-- Light Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue">
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue" id="lightControlCard">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="lightControlIcon">
 <i class="fa-solid fa-lightbulb"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">Đèn</p>
-<p class="text-xs text-mekong-blue">Bật</p>
+<p class="text-xs text-mekong-blue" id="lightControlStatus">Bật</p>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<input checked="" class="sr-only toggle-checkbox" id="lightToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
+<div class="flex items-center gap-2 pt-1">
+<span class="text-[10px] text-slate-500">Tự động</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-checkbox" id="autoLightToggle" type="checkbox"/>
+<div class="w-9 h-4 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
+</label>
+</div>
+<p class="text-[10px] text-slate-400" id="autoLightStatus">Auto tắt</p>
 </div>
 <!-- Fan Toggle -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2" id="fanCard">
@@ -367,7 +375,7 @@
 </div>
 <span class="text-xs font-semibold flex-1">Đèn phòng khách</span>
 <label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<input checked="" class="sr-only toggle-checkbox" id="favoriteLightToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
 </div>

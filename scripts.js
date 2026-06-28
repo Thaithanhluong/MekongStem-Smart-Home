@@ -116,6 +116,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const fanToggle = document.getElementById('fanToggle');
   const fanSpeedSlider = document.getElementById('fanSpeedSlider');
   const fanSpeedValue = document.getElementById('fanSpeedValue');
+  const lightControlCard = document.getElementById('lightControlCard');
+  const lightControlIcon = document.getElementById('lightControlIcon');
+  const lightControlStatus = document.getElementById('lightControlStatus');
+  const lightToggle = document.getElementById('lightToggle');
+  const favoriteLightToggle = document.getElementById('favoriteLightToggle');
+  const autoLightToggle = document.getElementById('autoLightToggle');
+  const autoLightStatus = document.getElementById('autoLightStatus');
   const motionStatusCard = document.getElementById('motionStatusCard');
   const motionStatusIcon = document.getElementById('motionStatusIcon');
   const motionStatusValue = document.getElementById('motionStatusValue');
@@ -143,10 +150,12 @@ document.addEventListener('DOMContentLoaded', function() {
     humidityTopic: 'mekongstem/smart-home/sensor/humidity',
     temperatureTopic: 'mekongstem/smart-home/sensor/temperature',
     lightTopic: 'mekongstem/smart-home/sensor/light',
+    lightStateTopic: 'mekongstem/smart-home/light',
+    autoLightTopic: 'mekongstem/smart-home/auto-light',
   };
   let mqttClient = null;
   let isMqttConnected = false;
-  let pendingRgbMessages = [];
+  let pendingMqttMessages = [];
   let motionResetTimer = null;
   let lastMotionAlertTime = 0;
   let lastGasAlertTime = 0;
@@ -197,10 +206,10 @@ document.addEventListener('DOMContentLoaded', function() {
         mqttConfig.temperatureTopic,
         mqttConfig.lightTopic,
       ], { qos: 0 });
-      if (pendingRgbMessages.length) {
-        const messages = [...pendingRgbMessages];
-        pendingRgbMessages = [];
-        messages.forEach(({ topic, message }) => publishRgbMessage(topic, message));
+      if (pendingMqttMessages.length) {
+        const messages = [...pendingMqttMessages];
+        pendingMqttMessages = [];
+        messages.forEach(({ topic, message }) => publishMqttMessage(topic, message));
       }
     });
 
@@ -233,11 +242,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  const publishRgbMessage = (topic, message) => {
+  const publishMqttMessage = (topic, message) => {
     connectMqtt();
 
     if (!mqttClient || !isMqttConnected) {
-      pendingRgbMessages.push({ topic, message });
+      pendingMqttMessages.push({ topic, message });
       return;
     }
 
@@ -248,19 +257,27 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const sendRgbState = (isOn) => {
-    publishRgbMessage(mqttConfig.rgbStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.rgbStateTopic, isOn ? 'ON' : 'OFF');
   };
 
   const sendRgbColor = (color) => {
-    publishRgbMessage(mqttConfig.rgbColorTopic, color);
+    publishMqttMessage(mqttConfig.rgbColorTopic, color);
   };
 
   const sendFanState = (isOn) => {
-    publishRgbMessage(mqttConfig.fanStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.fanStateTopic, isOn ? 'ON' : 'OFF');
   };
 
   const sendFanSpeed = (speed) => {
-    publishRgbMessage(mqttConfig.fanSpeedTopic, String(speed));
+    publishMqttMessage(mqttConfig.fanSpeedTopic, String(speed));
+  };
+
+  const sendLightState = (isOn) => {
+    publishMqttMessage(mqttConfig.lightStateTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  const sendAutoLightState = (isOn) => {
+    publishMqttMessage(mqttConfig.autoLightTopic, isOn ? 'ON' : 'OFF');
   };
 
   connectMqtt();
@@ -461,6 +478,62 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   renderAlerts();
+
+  const updateLightControlUi = (isOn) => {
+    if (!lightControlCard || !lightControlIcon || !lightControlStatus) return;
+
+    if (lightToggle && lightToggle.checked !== isOn) {
+      lightToggle.checked = isOn;
+    }
+
+    if (favoriteLightToggle && favoriteLightToggle.checked !== isOn) {
+      favoriteLightToggle.checked = isOn;
+    }
+
+    if (isOn) {
+      lightControlStatus.textContent = 'Bật';
+      lightControlStatus.style.color = '#1f5fbf';
+      lightControlIcon.style.backgroundColor = '#1f5fbf';
+      lightControlCard.style.borderBottomColor = '#1f5fbf';
+      lightControlCard.classList.add('border-b-4', 'border-mekong-blue');
+    } else {
+      lightControlStatus.textContent = 'Tắt';
+      lightControlStatus.style.color = '#94a3b8';
+      lightControlIcon.style.backgroundColor = '#cbd5e1';
+      lightControlCard.style.borderBottomColor = '#e2e8f0';
+      lightControlCard.classList.remove('border-b-4', 'border-mekong-blue');
+    }
+  };
+
+  const updateAutoLightUi = (isOn) => {
+    if (!autoLightStatus) return;
+
+    autoLightStatus.textContent = isOn ? 'Auto bật' : 'Auto tắt';
+    autoLightStatus.style.color = isOn ? '#1f5fbf' : '#94a3b8';
+  };
+
+  const handleLightToggleChange = (isOn) => {
+    updateLightControlUi(isOn);
+    sendLightState(isOn);
+  };
+
+  if (lightToggle) {
+    updateLightControlUi(lightToggle.checked);
+    lightToggle.addEventListener('change', () => handleLightToggleChange(lightToggle.checked));
+  }
+
+  if (favoriteLightToggle) {
+    favoriteLightToggle.checked = lightToggle?.checked ?? favoriteLightToggle.checked;
+    favoriteLightToggle.addEventListener('change', () => handleLightToggleChange(favoriteLightToggle.checked));
+  }
+
+  if (autoLightToggle) {
+    updateAutoLightUi(autoLightToggle.checked);
+    autoLightToggle.addEventListener('change', () => {
+      updateAutoLightUi(autoLightToggle.checked);
+      sendAutoLightState(autoLightToggle.checked);
+    });
+  }
 
   const updateFanUi = (isOn) => {
     const speed = fanSpeedSlider?.value || '0';
