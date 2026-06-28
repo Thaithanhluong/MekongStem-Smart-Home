@@ -115,22 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const mqttConfig = {
     url: 'wss://test.mosquitto.org:8081/mqtt',
-    topic: 'mekongstem/smart-home/led-rgb/set',
+    stateTopic: 'mekongstem/smart-home/led-rgb/state/set',
+    colorTopic: 'mekongstem/smart-home/led-rgb/color/set',
   };
   let mqttClient = null;
   let isMqttConnected = false;
-  let pendingRgbPayload = null;
-
-  const hexToRgb = (hex) => {
-    const cleanHex = hex.replace('#', '');
-    const value = Number.parseInt(cleanHex, 16);
-
-    return {
-      r: (value >> 16) & 255,
-      g: (value >> 8) & 255,
-      b: value & 255,
-    };
-  };
+  let pendingRgbMessages = [];
 
   const connectMqtt = () => {
     if (mqttClient || typeof mqtt === 'undefined') return;
@@ -144,9 +134,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('connect', () => {
       isMqttConnected = true;
-      if (pendingRgbPayload) {
-        publishRgbPayload(pendingRgbPayload);
-        pendingRgbPayload = null;
+      if (pendingRgbMessages.length) {
+        const messages = [...pendingRgbMessages];
+        pendingRgbMessages = [];
+        messages.forEach(({ topic, message }) => publishRgbMessage(topic, message));
       }
     });
 
@@ -163,31 +154,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  const publishRgbPayload = (payload) => {
+  const publishRgbMessage = (topic, message) => {
     connectMqtt();
 
     if (!mqttClient || !isMqttConnected) {
-      pendingRgbPayload = payload;
+      pendingRgbMessages.push({ topic, message });
       return;
     }
 
-    mqttClient.publish(mqttConfig.topic, JSON.stringify(payload), {
+    mqttClient.publish(topic, message, {
       qos: 0,
       retain: false,
     });
   };
 
-  const sendRgbCommand = ({ isOn, color = '#000000', name = 'Tắt' }) => {
-    const rgb = hexToRgb(color);
+  const sendRgbState = (isOn) => {
+    publishRgbMessage(mqttConfig.stateTopic, isOn ? 'ON' : 'OFF');
+  };
 
-    publishRgbPayload({
-      device: 'led_rgb',
-      state: isOn ? 'ON' : 'OFF',
-      color,
-      name,
-      ...rgb,
-      updatedAt: new Date().toISOString(),
-    });
+  const sendRgbColor = (color) => {
+    publishRgbMessage(mqttConfig.colorTopic, color);
   };
 
   connectMqtt();
@@ -211,7 +197,8 @@ document.addEventListener('DOMContentLoaded', function() {
       rgbStatus.textContent = name;
       rgbStatus.style.color = color;
       if (shouldPublish) {
-        sendRgbCommand({ isOn: true, color, name });
+        sendRgbColor(color);
+        sendRgbState(true);
       }
     }
   };
@@ -231,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
       rgbStatus.style.color = '#94a3b8';
       rgbIcon.style.backgroundColor = '#94a3b8';
       rgbCard.style.borderBottomColor = '#e2e8f0';
-      sendRgbCommand({ isOn: false });
+      sendRgbState(false);
     }
   });
 
