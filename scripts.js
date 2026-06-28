@@ -393,9 +393,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     lightValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">lux</span>`;
 
-    if (value < 100) {
+    if (value < 25) {
       setStatus(lightStatus, 'Thiếu sáng', '#5a4217');
-    } else if (value > 700) {
+    } else if (value > 90) {
       setStatus(lightStatus, 'Rất sáng', '#5a4217');
     } else {
       setStatus(lightStatus, 'Trung bình');
