@@ -1,0 +1,442 @@
+﻿<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mekong Stem Smart Home Dashboard</title>
+<link href="favicon.ico" rel="icon" type="image/x-icon"/>
+<script src="scripts.js"></script>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Font Awesome for Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body class="font-sans text-slate-800">
+<div class="flex h-screen overflow-hidden">
+<!-- BEGIN: Sidebar -->
+<aside class="w-64 sidebar-gradient border-r border-slate-100 flex flex-col h-full shrink-0" data-purpose="navigation-sidebar">
+<div class="p-6">
+<img alt="MEKONG STEM Logo" class="h-16 w-auto object-contain" src="logo.png"/>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 bg-mekong-blue text-white rounded-lg font-medium" href="#">
+<i class="fa-solid fa-house"></i>
+<span>Tổng quan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-microchip"></i>
+<span>Thiết bị</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-door-open"></i>
+<span>Phòng</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-robot"></i>
+<span>Tự động hóa</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-bell"></i>
+<span>Cảnh báo</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-clock-rotate-left"></i>
+<span>Lịch sử</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
+<i class="fa-solid fa-gear"></i>
+<span>Cài đặt</span>
+</a>
+</nav>
+<div class="p-4 space-y-4">
+<!-- User Profile -->
+<div class="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 card-shadow cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-mekong-blue flex items-center justify-center text-white">
+<i class="fa-solid fa-user"></i>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-bold truncate">Admin</p>
+<p class="text-xs text-mekong-gray truncate">admin@mekongstem.vn</p>
+</div>
+<i class="fa-solid fa-chevron-down text-xs text-mekong-gray"></i>
+</div>
+<!-- Connection Status -->
+<div class="bg-slate-50 border border-slate-100 rounded-xl p-2 flex items-center gap-2">
+<i class="fa-solid fa-wifi text-mekong-blue text-xs"></i>
+<p class="text-[10px] font-medium">Kết nối: <span class="text-green-500">Online</span></p>
+</div>
+<!-- App Branding Footer -->
+<div class="text-white pt-2">
+<h3 class="text-sm font-bold">MEKONG STEM SMART HOME</h3>
+<p class="text-xs opacity-80">V1.0.0</p>
+<div class="mt-2 w-full h-8 opacity-40">
+<!-- Simplified decoration line -->
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 100 20" width="100%">
+<path d="M0,10 L40,10 L50,5 L70,5 L80,10 L100,10" fill="none" stroke="white" stroke-width="1"></path>
+</svg>
+</div>
+</div>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: Main Content Area -->
+<main class="flex-1 flex flex-col overflow-y-auto bg-slate-50 relative">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md px-8 py-6 flex justify-between items-center" data-purpose="main-header">
+<h1 class="text-3xl font-bold text-mekong-blue">MEKONG STEM <span class="text-orange-900">SMART HOME</span></h1>
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="absolute -top-1 -right-1 w-4 h-4 bg-mekong-blue text-white text-[10px] flex items-center justify-center rounded-full border-2 border-slate-50">3</div>
+<button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
+<i class="fa-regular fa-bell text-xl"></i>
+</button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
+<i class="fa-regular fa-sun text-xl"></i>
+</button>
+</div>
+</header>
+<!-- Dashboard Grid -->
+<div class="px-8 pb-12 space-y-6">
+<!-- BEGIN: Top Status Cards -->
+<div class="grid grid-cols-5 gap-4" data-purpose="top-status-cards">
+<!-- Temperature -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-blue-100 text-mekong-blue rounded-full flex items-center justify-center text-xl">
+<i class="fa-solid fa-temperature-three-quarters"></i>
+</div>
+<div>
+<p class="text-xs text-slate-500">Nhiệt độ</p>
+<h4 class="text-xl font-bold">28.6°C</h4>
+<p class="text-[10px] text-green-500 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> Bình thường</p>
+</div>
+</div>
+<!-- Humidity -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-blue-100 text-mekong-blue rounded-full flex items-center justify-center text-xl">
+<i class="fa-solid fa-droplet"></i>
+</div>
+<div>
+<p class="text-xs text-slate-500">Độ ẩm</p>
+<h4 class="text-xl font-bold">65%</h4>
+<p class="text-[10px] text-green-500 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> Bình thường</p>
+</div>
+</div>
+<!-- Light -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-amber-100 text-amber-900 rounded-full flex items-center justify-center text-xl">
+<i class="fa-solid fa-sun"></i>
+</div>
+<div>
+<p class="text-xs text-slate-500">Ánh sáng</p>
+<h4 class="text-xl font-bold">320 <span class="text-sm font-medium">lux</span></h4>
+<p class="text-[10px] text-amber-500 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1"></span> Trung bình</p>
+</div>
+</div>
+<!-- Gas -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-amber-900/10 text-amber-900 rounded-full flex items-center justify-center text-xl">
+<i class="fa-solid fa-fire-flame-curved"></i>
+</div>
+<div>
+<p class="text-xs text-slate-500">Khí gas</p>
+<h4 class="text-xl font-bold">120 <span class="text-sm font-medium">ppm</span></h4>
+<p class="text-[10px] text-green-500 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> An toàn</p>
+</div>
+</div>
+<!-- Motion -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+<div class="w-12 h-12 bg-mekong-blue text-white rounded-full flex items-center justify-center text-xl">
+<i class="fa-solid fa-person-walking"></i>
+</div>
+<div>
+<p class="text-xs text-slate-500">Chuyển động</p>
+<h4 class="text-xl font-bold">Không có</h4>
+<p class="text-[10px] text-green-500 font-medium"><span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></span> Không phát hiện</p>
+</div>
+</div>
+</div>
+<!-- END: Top Status Cards -->
+<!-- BEGIN: Middle Row -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Living Room Controls -->
+<div class="col-span-4" data-purpose="living-room-controls">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">PHÒNG KHÁCH</h3>
+<div class="grid grid-cols-3 gap-4">
+<!-- Light Toggle -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-lightbulb"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Đèn</p>
+<p class="text-xs text-mekong-blue">Bật</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Fan Toggle -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-fan"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Quạt</p>
+<p class="text-xs text-slate-400">Tắt</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- AC Toggle -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-snowflake"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Điều hòa</p>
+<p class="text-xs text-mekong-blue">24°C</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Main Door -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-door-closed"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Cửa chính</p>
+<p class="text-xs text-slate-400">Đóng</p>
+</div>
+<button class="bg-slate-100 p-1.5 rounded text-slate-400">
+<i class="fa-solid fa-lock"></i>
+</button>
+</div>
+<!-- Auto Door -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue">
+<div class="w-10 h-10 bg-amber-900 text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-door-open"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Cửa tự động</p>
+<p class="text-xs text-slate-400">Đóng</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Buzzer -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<i class="fa-solid fa-volume-high"></i>
+</div>
+<div class="text-center">
+<p class="text-xs font-semibold">Buzzer</p>
+<p class="text-xs text-slate-400">Tắt</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- System Graphic -->
+<div class="col-span-4" data-purpose="system-graphic">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">TRẠNG THÁI HỆ THỐNG</h3>
+<div class="bg-white p-8 rounded-2xl card-shadow flex items-center justify-center relative overflow-hidden h-[calc(100%-2.5rem)]">
+<!-- Decorative circuits -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<svg height="100%" viewbox="0 0 400 300" width="100%">
+<path d="M50,50 L100,50 L120,30 M50,100 L80,100 L110,130 M300,250 L350,250 L370,230" fill="none" stroke="#004aad" stroke-width="1.5"></path>
+</svg>
+</div>
+<!-- House Illustration Placeholder -->
+<div class="relative z-10 w-full max-w-[200px]">
+<img alt="Smart House Status" class="w-full h-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVdpLHmuhxQpPQiG-o25f6qoNgG-qAZEK3lY0A57M9lzKsr5fpJ5VopSVya72fjtxqHCyFHunbDJK0sA0XUXwd7VRExwBQhUZsuBqxSz96H642vHcnsokyRnCEACMVMhaCNA-iDAzPzZJi0gKaa-5_T2n73kKTQo8iPEfFFB3TcgWpGIKK5dL95JJBeOdmMMJciJwrk4qUeQKlHBEjLRRAEur3j9qqYFAhEmsbqMq1c4hjg74iZMfV5fMEmpR7R02WafVpNuQmaPY" style="object-position: 50% 50%; clip-path: inset(36% 54% 33% 20%); scale: 2;"/>
+<!-- Checkmark Shield -->
+<div class="absolute -bottom-4 -right-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center border border-slate-100">
+<div class="w-10 h-10 bg-mekong-light-blue rounded-full flex items-center justify-center text-mekong-blue">
+<i class="fa-solid fa-shield-check"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Alerts -->
+<div class="col-span-4" data-purpose="alerts-list">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">CẢNH BÁO</h3>
+<div class="bg-white p-4 rounded-2xl card-shadow h-[calc(100%-2.5rem)] flex flex-col">
+<div class="space-y-4 flex-1">
+<!-- Alert 1 -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-fire-flame-curved"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold">Phát hiện khí gas</p>
+<p class="text-xs text-orange-600">Phòng bếp</p>
+</div>
+<span class="text-xs text-red-500 font-medium">10:30:15</span>
+</div>
+<!-- Alert 2 -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-blue-50 text-mekong-blue rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-person-running"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold">Phát hiện chuyển động</p>
+<p class="text-xs text-slate-500">Cửa chính</p>
+</div>
+<span class="text-xs text-red-500 font-medium">10:22:10</span>
+</div>
+<!-- Alert 3 -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-temperature-high"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-semibold">Nhiệt độ cao</p>
+<p class="text-xs text-orange-600">Phòng khách</p>
+</div>
+<span class="text-xs text-red-500 font-medium">09:15:42</span>
+</div>
+</div>
+<a class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-mekong-blue font-bold" href="#">
+                Xem tất cả cảnh báo
+                <i class="fa-solid fa-chevron-right"></i>
+</a>
+</div>
+</div>
+</div>
+<!-- END: Middle Row -->
+<!-- BEGIN: Bottom Row -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Temperature Chart -->
+<div class="col-span-6" data-purpose="temperature-chart">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">BIỂU ĐỒ NHIỆT ĐỘ</h3>
+<div class="bg-white p-6 rounded-2xl card-shadow">
+<canvas class="w-full" height="200" id="tempChart"></canvas>
+</div>
+</div>
+<!-- Favorite Devices -->
+<div class="col-span-3" data-purpose="favorite-devices">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">THIẾT BỊ YÊU THÍCH</h3>
+<div class="bg-white p-4 rounded-2xl card-shadow space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-mekong-blue text-white rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-lightbulb text-sm"></i>
+</div>
+<span class="text-xs font-semibold flex-1">Đèn phòng khách</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-mekong-blue text-white rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-fan text-sm"></i>
+</div>
+<span class="text-xs font-semibold flex-1">Quạt phòng ngủ</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-mekong-blue text-white rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-snowflake text-sm"></i>
+</div>
+<span class="text-xs font-semibold flex-1">Điều hòa phòng khách</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+<!-- Item 4 -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-amber-900 text-white rounded-lg flex items-center justify-center">
+<i class="fa-solid fa-door-open text-sm"></i>
+</div>
+<span class="text-xs font-semibold flex-1">Cửa tự động</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- System Info -->
+<div class="col-span-3" data-purpose="system-info">
+<h3 class="text-lg font-bold text-mekong-blue mb-4">THÔNG TIN HỆ THỐNG</h3>
+<div class="bg-white rounded-2xl card-shadow overflow-hidden">
+<div class="p-4 space-y-4">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-wifi text-mekong-blue text-sm"></i>
+<span class="text-xs text-slate-600">WiFi</span>
+</div>
+<span class="text-xs font-semibold">MekongSTEM_5G</span>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-globe text-mekong-blue text-sm"></i>
+<span class="text-xs text-slate-600">IP Address</span>
+</div>
+<span class="text-xs font-semibold">192.168.1.100</span>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-microchip text-mekong-blue text-sm"></i>
+<span class="text-xs text-slate-600">Firmware</span>
+</div>
+<span class="text-xs font-semibold">V1.0.0</span>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-clock text-mekong-blue text-sm"></i>
+<span class="text-xs text-slate-600">Thời gian hoạt động</span>
+</div>
+<span class="text-xs font-semibold">2 ngày 14 giờ</span>
+</div>
+</div>
+<button class="w-full bg-mekong-blue text-white py-3 px-4 flex items-center justify-between text-xs font-bold hover:bg-opacity-90 transition-all">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-rotate"></i>
+<span>Đồng bộ dữ liệu</span>
+</div>
+<i class="fa-solid fa-chevron-right"></i>
+</button>
+</div>
+</div>
+</div>
+<!-- END: Bottom Row -->
+</div>
+<!-- Footer Branding -->
+<footer class="mt-auto bg-mekong-blue py-2 px-8 flex justify-between items-center text-white text-[10px] font-medium tracking-wide">
+<span>MEKONG STEM - MEKONG CẤT CÁNH, STEM DẪN ĐƯỜNG</span>
+<div class="w-24 h-4 opacity-50">
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 100 20" width="100%">
+<path d="M0,10 L40,10 L50,15 L70,15 L80,10 L100,10" fill="none" stroke="white" stroke-width="1"></path>
+</svg>
+</div>
+</footer>
+</main>
+<!-- END: Main Content Area -->
+</div>
+
+</body></html>
