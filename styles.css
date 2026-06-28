@@ -75,3 +75,6 @@
       accent-color: #1f5fbf;
       cursor: pointer;
     }
+    [data-purpose="navigation-sidebar"] {
+      display: none !important;
+    }
