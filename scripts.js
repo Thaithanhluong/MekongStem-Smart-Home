@@ -16,93 +16,423 @@ window.tailwind.config = {
       }
     };
 
-// Simple line chart implementation on canvas
-    document.addEventListener('DOMContentLoaded', function() {
-      const canvas = document.getElementById('tempChart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const width = canvas.offsetWidth;
-      const height = canvas.offsetHeight;
-      canvas.width = width;
-      canvas.height = height;
+const TEMPERATURE_HISTORY_URLS = [
+  window.__TEMPERATURE_HISTORY_URL__,
+  '/api/dashboard/temperature-history',
+  '/api/temperature/history',
+].filter(Boolean);
 
-      const data = [25, 23, 27, 28, 32, 30, 27, 30]; // Sample temperature points
-      const labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
-      
-      const padding = 40;
-      const chartWidth = width - (padding * 2);
-      const chartHeight = height - (padding * 2);
+const TEMP_GRANULARITY_META = {
+  second: { label: 'Giây', stepMs: 1000, format: { hour: '2-digit', minute: '2-digit', second: '2-digit' } },
+  minute: { label: 'Phút', stepMs: 60000, format: { hour: '2-digit', minute: '2-digit' } },
+  hour: { label: 'Giờ', stepMs: 3600000, format: { hour: '2-digit' } },
+};
 
-      // Draw Grid Lines (Horizontal)
-      ctx.strokeStyle = '#dfe9f7';
-      ctx.lineWidth = 1;
-      ctx.font = '10px Inter';
-      ctx.fillStyle = '#5d6775';
-      
-      for(let i = 0; i <= 4; i++) {
-        const y = padding + (chartHeight / 4) * i;
-        const val = 40 - (i * 10);
-        ctx.beginPath();
-        ctx.moveTo(padding, y);
-        ctx.lineTo(width - padding, y);
-        ctx.stroke();
-        ctx.fillText(val + '°C', 10, y + 3);
+document.addEventListener('DOMContentLoaded', function() {
+  const canvas = document.getElementById('tempChart');
+  const subtitle = document.getElementById('temperatureChartSubtitle');
+  const prevDayBtn = document.getElementById('temperatureChartPrevDay');
+  const todayBtn = document.getElementById('temperatureChartToday');
+  const nextDayBtn = document.getElementById('temperatureChartNextDay');
+  const granularitySelect = document.getElementById('temperatureChartGranularity');
+  if (!canvas || !subtitle || !prevDayBtn || !todayBtn || !nextDayBtn || !granularitySelect) return;
+
+  const ctx = canvas.getContext('2d');
+  const chartState = {
+    selectedDate: new Date(),
+    granularity: granularitySelect.value || 'minute',
+    series: [],
+    loading: false,
+    error: '',
+    resizeObserver: null,
+  };
+
+  const pad = (value) => String(value).padStart(2, '0');
+  const formatLocalDateKey = (date) => {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+  const formatDisplayDate = (date) => new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+  const formatDisplayTime = (date, granularity) => new Intl.DateTimeFormat('vi-VN', TEMP_GRANULARITY_META[granularity]?.format || TEMP_GRANULARITY_META.minute.format).format(date);
+  const cloneDate = (date) => new Date(date.getTime());
+  const shiftDate = (date, deltaDays) => {
+    const next = cloneDate(date);
+    next.setDate(next.getDate() + deltaDays);
+    return next;
+  };
+  const parseDateValue = (value) => {
+    if (value instanceof Date) return new Date(value.getTime());
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const parseTemperatureValue = (value) => {
+    if (value == null) return null;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value.replace(',', '.').replace(/[^\d.-]/g, ''));
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+  const formatTemperatureNumber = (value, maximumFractionDigits = 1) => new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits,
+  }).format(value);
+  const pickTimestamp = (item) => {
+    if (!item || typeof item !== 'object') return null;
+    return item.timestamp ?? item.time ?? item.createdAt ?? item.date ?? item.datetime ?? item.recordedAt ?? item.ts ?? null;
+  };
+  const extractRawArray = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (!payload || typeof payload !== 'object') return [];
+    return payload.points || payload.items || payload.data || payload.series || payload.readings || payload.temperatures || [];
+  };
+  const buildSyntheticSeries = (values, granularity, selectedDate) => {
+    const meta = TEMP_GRANULARITY_META[granularity] || TEMP_GRANULARITY_META.minute;
+    const start = new Date(selectedDate);
+    start.setHours(0, 0, 0, 0);
+    return values
+      .map((value, index) => {
+        const numericValue = parseTemperatureValue(value);
+        if (numericValue === null) return null;
+        const timestamp = new Date(start.getTime() + index * meta.stepMs);
+        return {
+          value: numericValue,
+          timestamp,
+          label: formatDisplayTime(timestamp, granularity),
+        };
+      })
+      .filter(Boolean);
+  };
+  const normalizeTemperatureSeries = (payload, granularity, selectedDate) => {
+    const rawItems = extractRawArray(payload);
+    if (!rawItems.length) return [];
+
+    const bucketMap = new Map();
+    let hasTimestamp = false;
+
+    rawItems.forEach((item, index) => {
+      const numericValue = typeof item === 'number'
+        ? item
+        : parseTemperatureValue(item?.value ?? item?.temperature ?? item?.temp ?? item);
+
+      if (numericValue === null) return;
+
+      const timestampValue = parseDateValue(pickTimestamp(item));
+      if (timestampValue) {
+        hasTimestamp = true;
+        const bucket = new Date(timestampValue);
+        if (granularity === 'hour') {
+          bucket.setMinutes(0, 0, 0);
+        } else if (granularity === 'minute') {
+          bucket.setSeconds(0, 0);
+        } else {
+          bucket.setMilliseconds(0);
+        }
+
+        const bucketKey = bucket.toISOString();
+        const current = bucketMap.get(bucketKey) || { value: 0, count: 0, timestamp: bucket };
+        current.value += numericValue;
+        current.count += 1;
+        bucketMap.set(bucketKey, current);
+        return;
       }
 
-      // Draw X Labels
-      labels.forEach((label, i) => {
-        const x = padding + (chartWidth / (labels.length - 1)) * i;
-        ctx.fillText(label, x - 15, height - 10);
-      });
-
-      // Draw Line Area
-      ctx.beginPath();
-      ctx.moveTo(padding, height - padding);
-      data.forEach((val, i) => {
-        const x = padding + (chartWidth / (data.length - 1)) * i;
-        const y = padding + chartHeight - ((val / 40) * chartHeight);
-        ctx.lineTo(x, y);
-      });
-      ctx.lineTo(width - padding, height - padding);
-      ctx.fillStyle = 'rgba(42, 94, 169, 0.1)';
-      ctx.fill();
-
-      // Draw Actual Line
-      ctx.beginPath();
-      ctx.strokeStyle = '#2a5ea9';
-      ctx.lineWidth = 2;
-      ctx.lineJoin = 'round';
-      data.forEach((val, i) => {
-        const x = padding + (chartWidth / (data.length - 1)) * i;
-        const y = padding + chartHeight - ((val / 40) * chartHeight);
-        if(i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.stroke();
-
-      // Draw Points
-      data.forEach((val, i) => {
-        const x = padding + (chartWidth / (data.length - 1)) * i;
-        const y = padding + chartHeight - ((val / 40) * chartHeight);
-        
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#2a5ea9';
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Highlight last point
-        if (i === data.length - 1) {
-            ctx.fillStyle = '#2a5ea9';
-            ctx.fillRect(x - 20, y - 30, 40, 18);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px Inter';
-            ctx.fillText(val + '.6°C', x - 15, y - 17);
-        }
-      });
+      const synthetic = buildSyntheticSeries([numericValue], granularity, selectedDate)[0];
+      if (synthetic) {
+        const bucketKey = `${selectedDate.toDateString()}-${index}`;
+        bucketMap.set(bucketKey, {
+          value: synthetic.value,
+          count: 1,
+          timestamp: synthetic.timestamp,
+        });
+      }
     });
+
+    const aggregated = Array.from(bucketMap.values()).map((item) => {
+      const timestamp = item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+      const value = item.value / item.count;
+      return {
+        value,
+        timestamp,
+        label: formatDisplayTime(timestamp, granularity),
+      };
+    });
+
+    if (hasTimestamp) {
+      aggregated.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      return aggregated;
+    }
+
+    if (aggregated.length) {
+      return aggregated;
+    }
+
+    return buildSyntheticSeries(rawItems, granularity, selectedDate);
+  };
+  const setSubtitle = () => {
+    const granularityMeta = TEMP_GRANULARITY_META[chartState.granularity] || TEMP_GRANULARITY_META.minute;
+    subtitle.textContent = `${formatDisplayDate(chartState.selectedDate)} · Xem theo ${granularityMeta.label.toLowerCase()}`;
+  };
+  const resizeCanvas = () => {
+    const parent = canvas.parentElement;
+    const width = Math.max(320, parent?.clientWidth || canvas.clientWidth || canvas.offsetWidth || 320);
+    const height = 200;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { width, height };
+  };
+  const drawEmptyState = (message) => {
+    const { width, height } = resizeCanvas();
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#5d6775';
+    ctx.font = '14px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(message, width / 2, height / 2);
+  };
+  const drawChart = (series) => {
+    const { width, height } = resizeCanvas();
+    ctx.clearRect(0, 0, width, height);
+
+    if (!series.length) {
+      drawEmptyState(chartState.error || 'Chưa có dữ liệu nhiệt độ cho khoảng thời gian này.');
+      return;
+    }
+
+    const padding = 42;
+    const chartWidth = Math.max(1, width - padding * 2);
+    const chartHeight = Math.max(1, height - padding * 2);
+    const values = series.map((item) => item.value);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const rangePadding = Math.max(1, (maxValue - minValue) * 0.2);
+    const minY = minValue - rangePadding;
+    const maxY = maxValue + rangePadding;
+    const yScale = (value) => {
+      if (maxY === minY) return padding + chartHeight / 2;
+      return padding + chartHeight - ((value - minY) / (maxY - minY)) * chartHeight;
+    };
+    const xScale = (index) => {
+      if (series.length === 1) return padding + chartWidth / 2;
+      return padding + (chartWidth / (series.length - 1)) * index;
+    };
+
+    ctx.strokeStyle = '#dfe9f7';
+    ctx.fillStyle = '#5d6775';
+    ctx.lineWidth = 1;
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'right';
+
+    for (let i = 0; i <= 4; i += 1) {
+      const y = padding + (chartHeight / 4) * i;
+      const value = maxY - ((maxY - minY) / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+      ctx.fillText(`${formatTemperatureNumber(value)}°C`, padding - 6, y + 3);
+    }
+
+    ctx.textAlign = 'center';
+    const xLabelStep = Math.max(1, Math.ceil(series.length / 6));
+    series.forEach((item, index) => {
+      if (index % xLabelStep !== 0 && index !== series.length - 1) return;
+      const x = xScale(index);
+      ctx.fillText(item.label || '', x, height - 10);
+    });
+
+    ctx.beginPath();
+    ctx.moveTo(xScale(0), height - padding);
+    series.forEach((item, index) => {
+      ctx.lineTo(xScale(index), yScale(item.value));
+    });
+    ctx.lineTo(xScale(series.length - 1), height - padding);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(42, 94, 169, 0.12)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#2a5ea9';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    series.forEach((item, index) => {
+      const x = xScale(index);
+      const y = yScale(item.value);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    series.forEach((item, index) => {
+      const x = xScale(index);
+      const y = yScale(item.value);
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#2a5ea9';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    const lastPoint = series[series.length - 1];
+    const lastX = xScale(series.length - 1);
+    const lastY = yScale(lastPoint.value);
+    const labelText = `${formatTemperatureNumber(lastPoint.value)}°C`;
+    ctx.font = 'bold 10px Inter';
+    const labelWidth = ctx.measureText(labelText).width + 12;
+    const labelX = Math.min(Math.max(6, lastX - labelWidth / 2), width - labelWidth - 6);
+    const labelY = Math.max(6, lastY - 28);
+    ctx.fillStyle = '#2a5ea9';
+    ctx.fillRect(labelX, labelY, labelWidth, 18);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(labelText, labelX + labelWidth / 2, labelY + 12);
+  };
+  const renderTemperatureChart = () => {
+    setSubtitle();
+    drawChart(chartState.series);
+  };
+  const updateNavigationState = () => {
+    const todayKey = formatLocalDateKey(new Date());
+    const selectedKey = formatLocalDateKey(chartState.selectedDate);
+    todayBtn.disabled = selectedKey === todayKey;
+    nextDayBtn.disabled = selectedKey === todayKey;
+    nextDayBtn.classList.toggle('opacity-50', nextDayBtn.disabled);
+    nextDayBtn.classList.toggle('cursor-not-allowed', nextDayBtn.disabled);
+    todayBtn.classList.toggle('opacity-50', todayBtn.disabled);
+    todayBtn.classList.toggle('cursor-not-allowed', todayBtn.disabled);
+  };
+  const setLoadingState = (isLoading) => {
+    chartState.loading = isLoading;
+    if (isLoading) {
+      subtitle.textContent = 'Đang tải dữ liệu nhiệt độ từ server...';
+    }
+  };
+  const resolveTemperatureHistory = async (date, granularity) => {
+    const queryDate = formatLocalDateKey(date);
+    let lastError = null;
+
+    for (const endpoint of TEMPERATURE_HISTORY_URLS) {
+      try {
+        const url = new URL(endpoint, window.location.origin);
+        url.searchParams.set('date', queryDate);
+        url.searchParams.set('granularity', granularity);
+        url.searchParams.set('ts', String(Date.now()));
+
+        const response = await fetch(url.toString(), { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const series = normalizeTemperatureSeries(payload, granularity, date);
+        if (series.length) {
+          return series;
+        }
+        lastError = new Error('Empty series');
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Không tải được dữ liệu nhiệt độ');
+  };
+  const loadTemperatureChart = async () => {
+    chartState.granularity = granularitySelect.value || 'minute';
+    setLoadingState(true);
+    updateNavigationState();
+
+    try {
+      const series = await resolveTemperatureHistory(chartState.selectedDate, chartState.granularity);
+      chartState.series = series;
+      chartState.error = '';
+    } catch (error) {
+      chartState.series = [];
+      chartState.error = 'Không tải được dữ liệu nhiệt độ từ server.';
+      console.warn('Không tải được lịch sử nhiệt độ:', error.message);
+    } finally {
+      setLoadingState(false);
+      renderTemperatureChart();
+    }
+  };
+
+  const appendLiveTemperaturePoint = (value, timestamp = new Date()) => {
+    const numericValue = parseTemperatureValue(value);
+    const pointTime = parseDateValue(timestamp) || new Date();
+    if (numericValue === null) return;
+    if (formatLocalDateKey(pointTime) !== formatLocalDateKey(chartState.selectedDate)) return;
+
+    const nextSeries = [...chartState.series, {
+      value: numericValue,
+      timestamp: pointTime,
+      label: formatDisplayTime(pointTime, chartState.granularity),
+    }];
+    chartState.series = nextSeries.slice(-720);
+    chartState.error = '';
+    renderTemperatureChart();
+  };
+
+  window.__MEKONG_TEMP_CHART__ = {
+    refresh: loadTemperatureChart,
+    append: appendLiveTemperaturePoint,
+    setDate: (date) => {
+      const nextDate = parseDateValue(date);
+      if (!nextDate) return;
+      chartState.selectedDate = nextDate;
+      updateNavigationState();
+      loadTemperatureChart();
+    },
+  };
+
+  prevDayBtn.addEventListener('click', () => {
+    chartState.selectedDate = shiftDate(chartState.selectedDate, -1);
+    updateNavigationState();
+    loadTemperatureChart();
+  });
+
+  todayBtn.addEventListener('click', () => {
+    chartState.selectedDate = new Date();
+    updateNavigationState();
+    loadTemperatureChart();
+  });
+
+  nextDayBtn.addEventListener('click', () => {
+    const today = new Date();
+    if (formatLocalDateKey(chartState.selectedDate) === formatLocalDateKey(today)) return;
+    chartState.selectedDate = shiftDate(chartState.selectedDate, 1);
+    if (formatLocalDateKey(chartState.selectedDate) > formatLocalDateKey(today)) {
+      chartState.selectedDate = today;
+    }
+    updateNavigationState();
+    loadTemperatureChart();
+  });
+
+  granularitySelect.addEventListener('change', () => {
+    chartState.granularity = granularitySelect.value || 'minute';
+    loadTemperatureChart();
+  });
+
+  if (window.ResizeObserver) {
+    chartState.resizeObserver = new ResizeObserver(() => {
+      renderTemperatureChart();
+    });
+    chartState.resizeObserver.observe(canvas.parentElement || canvas);
+  } else {
+    window.addEventListener('resize', renderTemperatureChart);
+  }
+
+  updateNavigationState();
+  loadTemperatureChart();
+});
 
 document.addEventListener('DOMContentLoaded', function() {
   const rgbCard = document.getElementById('rgbLedCard');
@@ -411,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAlerts();
   };
 
-  const updateTemperature = (message) => {
+  const updateTemperature = (message, options = {}) => {
     const value = parseSensorValue(message);
     if (value === null || !temperatureValue) return;
 
@@ -430,6 +760,10 @@ document.addEventListener('DOMContentLoaded', function() {
       setStatus(temperatureStatus, 'Nhiệt độ thấp', '#2a5ea9');
     } else {
       setStatus(temperatureStatus, 'Bình thường');
+    }
+
+    if (!options.skipChartUpdate) {
+      window.__MEKONG_TEMP_CHART__?.append(value, new Date());
     }
   };
 
@@ -522,7 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const seedAlertsFromCurrentDashboard = () => {
-    updateTemperature(temperatureValue?.textContent || '');
+    updateTemperature(temperatureValue?.textContent || '', { skipChartUpdate: true });
     updateHumidity(humidityValue?.textContent || '');
     updateLight(lightValue?.textContent || '');
     updateGas(gasValue?.textContent || '');
@@ -543,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const temperature = sensors.temperature ?? sensors.temp ?? snapshot.temperature ?? snapshot.temp;
     if (temperature != null) {
-      updateTemperature(temperature);
+      updateTemperature(temperature, { skipChartUpdate: true });
     }
 
     const humidity = sensors.humidity ?? snapshot.humidity;
