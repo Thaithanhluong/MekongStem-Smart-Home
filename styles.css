@@ -64,6 +64,35 @@
       transform: scale(1.08);
     }
 
+    .door-action-button {
+      width: 2.65rem;
+      height: 2.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.8rem;
+      border: 1px solid rgba(42, 94, 169, 0.12);
+      background: #eef4fc;
+      color: #8b9bb5;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+      transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+      cursor: pointer;
+    }
+
+    .door-action-button:hover,
+    .door-action-button:focus-visible {
+      transform: translateY(-1px) scale(1.03);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+      border-color: rgba(42, 94, 169, 0.28);
+      outline: none;
+    }
+
+    .door-action-button.is-open {
+      background: #2a5ea9;
+      color: #ffffff;
+      border-color: #2a5ea9;
+    }
+
     .fan-speed-control {
       width: 100%;
       max-width: 5.25rem;

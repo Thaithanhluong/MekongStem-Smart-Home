@@ -121,6 +121,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const buzzerStatus = document.getElementById('buzzerStatus');
   const buzzerToggle = document.getElementById('buzzerToggle');
   const buzzerDetectToggle = document.getElementById('buzzerDetectToggle');
+  const mainDoorCard = document.getElementById('mainDoorCard');
+  const mainDoorIcon = document.getElementById('mainDoorIcon');
+  const mainDoorStatus = document.getElementById('mainDoorStatus');
+  const mainDoorToggle = document.getElementById('mainDoorToggle');
+  const autoDoorCard = document.getElementById('autoDoorCard');
+  const autoDoorIcon = document.getElementById('autoDoorIcon');
+  const autoDoorStatus = document.getElementById('autoDoorStatus');
+  const autoDoorToggle = document.getElementById('autoDoorToggle');
   const lightControlCard = document.getElementById('lightControlCard');
   const lightControlIcon = document.getElementById('lightControlIcon');
   const lightControlStatus = document.getElementById('lightControlStatus');
@@ -153,6 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
     fanSpeedTopic: 'mekongstem/smart-home/fan/speed/set',
     buzzerStateTopic: 'mekongstem/smart-home/buzzer',
     buzzerDetectStateTopic: 'mekongstem/smart-home/buzzer-when-detect',
+    mainDoorStateTopic: 'mekongstem/smart-home/door/main/state/set',
+    autoDoorStateTopic: 'mekongstem/smart-home/door/auto/state/set',
     motionTopic: 'mekongstem/smart-home/motion/status',
     gasTopic: 'mekongstem/smart-home/sensor/gas',
     humidityTopic: 'mekongstem/smart-home/sensor/humidity',
@@ -262,6 +272,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const sendBuzzerDetectState = (isOn) => {
     publishMqttMessage(mqttConfig.buzzerDetectStateTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  const sendMainDoorState = (isOn) => {
+    publishMqttMessage(mqttConfig.mainDoorStateTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  const sendAutoDoorState = (isOn) => {
+    publishMqttMessage(mqttConfig.autoDoorStateTopic, isOn ? 'ON' : 'OFF');
   };
 
   const sendLightState = (isOn) => {
@@ -580,6 +598,16 @@ document.addEventListener('DOMContentLoaded', function() {
       updateBuzzerDetectUi(buzzerDetectOn);
     }
 
+    const mainDoorOpen = normalizeBoolean(controls.mainDoorOpen ?? snapshot.mainDoorOpen ?? controls.doorOpen ?? snapshot.doorOpen);
+    if (mainDoorOpen !== null) {
+      updateMainDoorUi(mainDoorOpen);
+    }
+
+    const autoDoorOn = normalizeBoolean(controls.autoDoorOn ?? snapshot.autoDoorOn ?? controls.autoDoor ?? snapshot.autoDoor);
+    if (autoDoorOn !== null) {
+      updateAutoDoorUi(autoDoorOn);
+    }
+
     const rgbOn = normalizeBoolean(controls.rgbOn ?? snapshot.rgbOn);
     if (rgbOn !== null && rgbToggle && rgbToggle.checked !== rgbOn) {
       rgbToggle.checked = rgbOn;
@@ -736,6 +764,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
+  const updateMainDoorUi = (isOpen) => {
+    if (!mainDoorCard || !mainDoorIcon || !mainDoorStatus || !mainDoorToggle) return;
+
+    mainDoorToggle.setAttribute('aria-pressed', String(isOpen));
+    mainDoorToggle.className = isOpen ? 'door-action-button is-open' : 'door-action-button';
+    mainDoorToggle.innerHTML = isOpen
+      ? '<i class="fa-solid fa-lock-open"></i>'
+      : '<i class="fa-solid fa-lock"></i>';
+
+    if (isOpen) {
+      mainDoorStatus.textContent = 'Mở';
+      mainDoorStatus.style.color = '#2a5ea9';
+      mainDoorIcon.innerHTML = '<i class="fa-solid fa-lock-open"></i>';
+      mainDoorIcon.style.backgroundColor = '#2a5ea9';
+      mainDoorCard.style.borderBottomColor = '#2a5ea9';
+    } else {
+      mainDoorStatus.textContent = 'Đóng';
+      mainDoorStatus.style.color = '#5d6775';
+      mainDoorIcon.innerHTML = '<i class="fa-solid fa-lock"></i>';
+      mainDoorIcon.style.backgroundColor = '#dbe6f5';
+      mainDoorCard.style.borderBottomColor = '#dbe6f5';
+    }
+  };
+
+  const updateAutoDoorUi = (isOn) => {
+    if (!autoDoorCard || !autoDoorIcon || !autoDoorStatus || !autoDoorToggle) return;
+
+    if (autoDoorToggle.checked !== isOn) {
+      autoDoorToggle.checked = isOn;
+    }
+
+    if (isOn) {
+      autoDoorStatus.textContent = 'Bật';
+      autoDoorStatus.style.color = '#2a5ea9';
+      autoDoorIcon.style.backgroundColor = '#2a5ea9';
+      autoDoorCard.style.borderBottomColor = '#2a5ea9';
+    } else {
+      autoDoorStatus.textContent = 'Tắt';
+      autoDoorStatus.style.color = '#5d6775';
+      autoDoorIcon.style.backgroundColor = '#dbe6f5';
+      autoDoorCard.style.borderBottomColor = '#dbe6f5';
+    }
+  };
+
   if (fanToggle && fanSpeedSlider && fanSpeedValue) {
     fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
     updateFanUi(fanToggle.checked);
@@ -777,6 +849,23 @@ document.addEventListener('DOMContentLoaded', function() {
     buzzerDetectToggle.addEventListener('change', () => {
       updateBuzzerDetectUi(buzzerDetectToggle.checked);
       sendBuzzerDetectState(buzzerDetectToggle.checked);
+    });
+  }
+
+  if (mainDoorToggle) {
+    updateMainDoorUi(false);
+    mainDoorToggle.addEventListener('click', () => {
+      const nextState = mainDoorToggle.getAttribute('aria-pressed') !== 'true';
+      updateMainDoorUi(nextState);
+      sendMainDoorState(nextState);
+    });
+  }
+
+  if (autoDoorToggle) {
+    updateAutoDoorUi(autoDoorToggle.checked);
+    autoDoorToggle.addEventListener('change', () => {
+      updateAutoDoorUi(autoDoorToggle.checked);
+      sendAutoDoorState(autoDoorToggle.checked);
     });
   }
 
