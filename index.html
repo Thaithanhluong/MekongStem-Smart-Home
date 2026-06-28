@@ -91,7 +91,7 @@
 <h1 class="text-3xl font-bold text-mekong-blue">MEKONG STEM <span class="text-mekong-brown">SMART HOME</span></h1>
 <div class="flex items-center gap-4">
 <div class="relative">
-<div class="absolute -top-1 -right-1 w-4 h-4 bg-mekong-blue text-white text-[10px] flex items-center justify-center rounded-full border-2 border-slate-50">3</div>
+<div class="absolute -top-1 -right-1 w-4 h-4 bg-mekong-blue text-white text-[10px] flex items-center justify-center rounded-full border-2 border-slate-50" id="alertCount">0</div>
 <button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
 <i class="fa-regular fa-bell text-xl"></i>
 </button>
@@ -312,41 +312,7 @@
 <div class="col-span-4" data-purpose="alerts-list">
 <h3 class="text-lg font-bold text-mekong-blue mb-4">CẢNH BÁO</h3>
 <div class="bg-white p-4 rounded-2xl card-shadow h-[calc(100%-2.5rem)] flex flex-col">
-<div class="space-y-4 flex-1" id="alertsList">
-<!-- Alert 1 -->
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 bg-mekong-brown/10 text-mekong-brown rounded-lg flex items-center justify-center">
-<i class="fa-solid fa-fire-flame-curved"></i>
-</div>
-<div class="flex-1">
-<p class="text-sm font-semibold">Phát hiện khí gas</p>
-<p class="text-xs text-mekong-brown">Phòng bếp</p>
-</div>
-<span class="text-xs text-mekong-brown font-medium">10:30:15</span>
-</div>
-<!-- Alert 2 -->
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 bg-mekong-light-blue text-mekong-blue rounded-lg flex items-center justify-center">
-<i class="fa-solid fa-person-running"></i>
-</div>
-<div class="flex-1">
-<p class="text-sm font-semibold">Phát hiện chuyển động</p>
-<p class="text-xs text-slate-500">Cửa chính</p>
-</div>
-<span class="text-xs text-mekong-brown font-medium">10:22:10</span>
-</div>
-<!-- Alert 3 -->
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 bg-mekong-brown/10 text-mekong-brown rounded-lg flex items-center justify-center">
-<i class="fa-solid fa-temperature-high"></i>
-</div>
-<div class="flex-1">
-<p class="text-sm font-semibold">Nhiệt độ cao</p>
-<p class="text-xs text-mekong-brown">Phòng khách</p>
-</div>
-<span class="text-xs text-mekong-brown font-medium">09:15:42</span>
-</div>
-</div>
+<div class="space-y-4 flex-1" id="alertsList"></div>
 <a class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-mekong-blue font-bold" href="#">
                 Xem tất cả cảnh báo
                 <i class="fa-solid fa-chevron-right"></i>

@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const motionStatusValue = document.getElementById('motionStatusValue');
   const motionStatusText = document.getElementById('motionStatusText');
   const alertsList = document.getElementById('alertsList');
+  const alertCount = document.getElementById('alertCount');
   const temperatureValue = document.getElementById('temperatureValue');
   const temperatureStatus = document.getElementById('temperatureStatus');
   const humidityValue = document.getElementById('humidityValue');
@@ -160,32 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let lastMotionAlertTime = 0;
   let lastGasAlertTime = 0;
   let lastTemperatureAlertTime = 0;
-  const alerts = [
-    {
-      title: 'Phát hiện khí gas',
-      location: 'Phòng bếp',
-      time: '10:30:15',
-      icon: 'fa-fire-flame-curved',
-      iconClass: 'bg-mekong-brown/10 text-mekong-brown',
-      timeClass: 'text-mekong-brown',
-    },
-    {
-      title: 'Phát hiện chuyển động',
-      location: 'Cửa chính',
-      time: '10:22:10',
-      icon: 'fa-person-running',
-      iconClass: 'bg-mekong-light-blue text-mekong-blue',
-      timeClass: 'text-mekong-brown',
-    },
-    {
-      title: 'Nhiệt độ cao',
-      location: 'Phòng khách',
-      time: '09:15:42',
-      icon: 'fa-temperature-high',
-      iconClass: 'bg-mekong-brown/10 text-mekong-brown',
-      timeClass: 'text-mekong-brown',
-    },
-  ];
+  const alerts = [];
 
   const connectMqtt = () => {
     if (mqttClient || typeof mqtt === 'undefined') return;
@@ -311,6 +287,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const renderAlerts = () => {
     if (!alertsList) return;
+
+    if (alertCount) {
+      alertCount.textContent = String(Math.min(alerts.length, 99));
+      alertCount.classList.toggle('hidden', alerts.length === 0);
+    }
+
+    if (!alerts.length) {
+      alertsList.innerHTML = `
+        <div class="h-full min-h-40 flex flex-col items-center justify-center text-center text-slate-400">
+          <i class="fa-regular fa-bell-slash text-2xl mb-2"></i>
+          <p class="text-sm font-semibold text-slate-500">Chưa có cảnh báo</p>
+          <p class="text-xs">Hệ thống sẽ tự tạo cảnh báo khi dữ liệu vượt ngưỡng.</p>
+        </div>
+      `;
+      return;
+    }
 
     alertsList.innerHTML = alerts.slice(0, 5).map((alert) => `
       <div class="flex items-center gap-3">
@@ -477,7 +469,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  renderAlerts();
+  const seedAlertsFromCurrentDashboard = () => {
+    updateTemperature(temperatureValue?.textContent || '');
+    updateHumidity(humidityValue?.textContent || '');
+    updateLight(lightValue?.textContent || '');
+    updateGas(gasValue?.textContent || '');
+
+    const currentMotionText = `${motionStatusValue?.textContent || ''} ${motionStatusText?.textContent || ''}`.toLowerCase();
+    if (currentMotionText.includes('có người') || currentMotionText.includes('đang phát hiện')) {
+      addMotionAlert();
+    }
+
+    renderAlerts();
+  };
+
+  seedAlertsFromCurrentDashboard();
 
   const updateLightControlUi = (isOn) => {
     if (!lightControlCard || !lightControlIcon || !lightControlStatus) return;
