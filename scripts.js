@@ -3,9 +3,11 @@ window.tailwind.config = {
       theme: {
         extend: {
           colors: {
-            'mekong-blue': '#004aad',
-            'mekong-light-blue': '#f0f7ff',
-            'mekong-gray': '#64748b',
+            'mekong-blue': '#1f5fbf',
+            'mekong-light-blue': '#edf5ff',
+            'mekong-sky': '#6f9fe8',
+            'mekong-brown': '#5a4217',
+            'mekong-gray': '#58667a',
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -32,10 +34,10 @@ window.tailwind.config = {
       const chartHeight = height - (padding * 2);
 
       // Draw Grid Lines (Horizontal)
-      ctx.strokeStyle = '#f1f5f9';
+      ctx.strokeStyle = '#e8eef7';
       ctx.lineWidth = 1;
       ctx.font = '10px Inter';
-      ctx.fillStyle = '#94a3b8';
+      ctx.fillStyle = '#58667a';
       
       for(let i = 0; i <= 4; i++) {
         const y = padding + (chartHeight / 4) * i;
@@ -62,12 +64,12 @@ window.tailwind.config = {
         ctx.lineTo(x, y);
       });
       ctx.lineTo(width - padding, height - padding);
-      ctx.fillStyle = 'rgba(0, 74, 173, 0.05)';
+      ctx.fillStyle = 'rgba(31, 95, 191, 0.08)';
       ctx.fill();
 
       // Draw Actual Line
       ctx.beginPath();
-      ctx.strokeStyle = '#004aad';
+      ctx.strokeStyle = '#1f5fbf';
       ctx.lineWidth = 2;
       ctx.lineJoin = 'round';
       data.forEach((val, i) => {
@@ -85,7 +87,7 @@ window.tailwind.config = {
         
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#004aad';
+        ctx.fillStyle = '#1f5fbf';
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -93,7 +95,7 @@ window.tailwind.config = {
 
         // Highlight last point
         if (i === data.length - 1) {
-            ctx.fillStyle = '#004aad';
+            ctx.fillStyle = '#1f5fbf';
             ctx.fillRect(x - 20, y - 30, 40, 18);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Inter';
