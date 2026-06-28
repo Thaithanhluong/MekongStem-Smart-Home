@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (value > 90) {
       setStatus(lightStatus, 'Rất sáng', '#5a4217');
     } else {
-      setStatus(lightStatus, 'Trung bình');
+      setStatus(lightStatus, 'Tốt');
     }
   };
 
