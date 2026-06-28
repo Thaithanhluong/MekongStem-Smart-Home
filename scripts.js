@@ -113,7 +113,86 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
 
-  const setRgbColor = (button) => {
+  const mqttConfig = {
+    url: 'wss://test.mosquitto.org:8081/mqtt',
+    topic: 'mekongstem/smart-home/led-rgb/set',
+  };
+  let mqttClient = null;
+  let isMqttConnected = false;
+  let pendingRgbPayload = null;
+
+  const hexToRgb = (hex) => {
+    const cleanHex = hex.replace('#', '');
+    const value = Number.parseInt(cleanHex, 16);
+
+    return {
+      r: (value >> 16) & 255,
+      g: (value >> 8) & 255,
+      b: value & 255,
+    };
+  };
+
+  const connectMqtt = () => {
+    if (mqttClient || typeof mqtt === 'undefined') return;
+
+    mqttClient = mqtt.connect(mqttConfig.url, {
+      clientId: `mekongstem_web_${Math.random().toString(16).slice(2, 10)}`,
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 2000,
+    });
+
+    mqttClient.on('connect', () => {
+      isMqttConnected = true;
+      if (pendingRgbPayload) {
+        publishRgbPayload(pendingRgbPayload);
+        pendingRgbPayload = null;
+      }
+    });
+
+    mqttClient.on('reconnect', () => {
+      isMqttConnected = false;
+    });
+
+    mqttClient.on('close', () => {
+      isMqttConnected = false;
+    });
+
+    mqttClient.on('error', (error) => {
+      console.warn('MQTT RGB LED error:', error.message);
+    });
+  };
+
+  const publishRgbPayload = (payload) => {
+    connectMqtt();
+
+    if (!mqttClient || !isMqttConnected) {
+      pendingRgbPayload = payload;
+      return;
+    }
+
+    mqttClient.publish(mqttConfig.topic, JSON.stringify(payload), {
+      qos: 0,
+      retain: false,
+    });
+  };
+
+  const sendRgbCommand = ({ isOn, color = '#000000', name = 'Tắt' }) => {
+    const rgb = hexToRgb(color);
+
+    publishRgbPayload({
+      device: 'led_rgb',
+      state: isOn ? 'ON' : 'OFF',
+      color,
+      name,
+      ...rgb,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  connectMqtt();
+
+  const setRgbColor = (button, shouldPublish = true) => {
     const color = button.dataset.color || '#1f5fbf';
     const name = button.dataset.name || 'Tùy chọn';
 
@@ -131,6 +210,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!rgbToggle || rgbToggle.checked) {
       rgbStatus.textContent = name;
       rgbStatus.style.color = color;
+      if (shouldPublish) {
+        sendRgbCommand({ isOn: true, color, name });
+      }
     }
   };
 
@@ -149,6 +231,12 @@ document.addEventListener('DOMContentLoaded', function() {
       rgbStatus.style.color = '#94a3b8';
       rgbIcon.style.backgroundColor = '#94a3b8';
       rgbCard.style.borderBottomColor = '#e2e8f0';
+      sendRgbCommand({ isOn: false });
     }
   });
+
+  const initialSelected = document.querySelector('.honeycomb-cell.is-selected');
+  if (initialSelected) {
+    setRgbColor(initialSelected, false);
+  }
 });
