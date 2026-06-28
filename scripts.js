@@ -28,6 +28,96 @@ const TEMP_GRANULARITY_META = {
   hour: { label: 'Giờ', stepMs: 3600000, format: { hour: '2-digit' } },
 };
 
+const DASHBOARD_STORAGE_KEY = 'mekongstem.smart-home.dashboard-state-v1';
+
+const getEmptyStoredDashboardState = () => ({
+  controls: {},
+  sensors: {},
+  alerts: [],
+  chart: {},
+  ui: {},
+});
+
+const normalizeStoredDashboardState = (state) => {
+  const fallback = getEmptyStoredDashboardState();
+  if (!state || typeof state !== 'object') return fallback;
+
+  const controls = state.controls && typeof state.controls === 'object' ? state.controls : {};
+  const sensors = state.sensors && typeof state.sensors === 'object' ? state.sensors : {};
+  const chart = state.chart && typeof state.chart === 'object' ? state.chart : {};
+  const ui = state.ui && typeof state.ui === 'object' ? state.ui : {};
+  const alerts = Array.isArray(state.alerts)
+    ? state.alerts.slice(0, 10).map((alert) => ({
+      title: String(alert?.title || 'Cảnh báo'),
+      location: String(alert?.location || ''),
+      time: String(alert?.time || ''),
+      icon: String(alert?.icon || 'fa-bell'),
+      iconClass: String(alert?.iconClass || 'bg-mekong-light-blue text-mekong-blue'),
+      timeClass: String(alert?.timeClass || 'text-mekong-brown'),
+    }))
+    : [];
+
+  return {
+    ...fallback,
+    ...state,
+    controls,
+    sensors,
+    alerts,
+    chart,
+    ui,
+  };
+};
+
+let dashboardStorageCache = null;
+
+const readDashboardState = () => {
+  if (dashboardStorageCache) return dashboardStorageCache;
+
+  try {
+    const raw = window.localStorage.getItem(DASHBOARD_STORAGE_KEY);
+    dashboardStorageCache = normalizeStoredDashboardState(raw ? JSON.parse(raw) : null);
+  } catch (error) {
+    dashboardStorageCache = getEmptyStoredDashboardState();
+  }
+
+  return dashboardStorageCache;
+};
+
+const writeDashboardState = (patch = {}) => {
+  const current = readDashboardState();
+  const next = normalizeStoredDashboardState({
+    ...current,
+    ...patch,
+    controls: {
+      ...current.controls,
+      ...(patch.controls || {}),
+    },
+    sensors: {
+      ...current.sensors,
+      ...(patch.sensors || {}),
+    },
+    alerts: Array.isArray(patch.alerts) ? patch.alerts : current.alerts,
+    chart: {
+      ...current.chart,
+      ...(patch.chart || {}),
+    },
+    ui: {
+      ...current.ui,
+      ...(patch.ui || {}),
+    },
+  });
+
+  dashboardStorageCache = next;
+
+  try {
+    window.localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(next));
+  } catch (error) {
+    // Ignore storage write failures and keep the in-memory cache.
+  }
+
+  return next;
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('tempChart');
   const subtitle = document.getElementById('temperatureChartSubtitle');
@@ -38,10 +128,24 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!canvas || !subtitle || !prevDayBtn || !todayBtn || !nextDayBtn || !granularitySelect) return;
 
   const ctx = canvas.getContext('2d');
+  const storedChartState = readDashboardState().chart || {};
+  const storedChartSeries = Array.isArray(storedChartState.series) ? storedChartState.series : [];
+  const storedSelectedDate = storedChartState.selectedDate ? new Date(storedChartState.selectedDate) : null;
   const chartState = {
-    selectedDate: new Date(),
-    granularity: granularitySelect.value || 'minute',
-    series: [],
+    selectedDate: storedSelectedDate && !Number.isNaN(storedSelectedDate.getTime()) ? storedSelectedDate : new Date(),
+    granularity: storedChartState.granularity || granularitySelect.value || 'minute',
+    series: storedChartSeries
+      .map((item) => {
+        const timestamp = item?.timestamp ? new Date(item.timestamp) : null;
+        const value = typeof item?.value === 'number' ? item.value : Number(item?.value);
+        if (!Number.isFinite(value) || !timestamp || Number.isNaN(timestamp.getTime())) return null;
+        return {
+          value,
+          timestamp,
+          label: item.label || '',
+        };
+      })
+      .filter(Boolean),
     loading: false,
     error: '',
     resizeObserver: null,
@@ -177,6 +281,19 @@ document.addEventListener('DOMContentLoaded', function() {
   const setSubtitle = () => {
     const granularityMeta = TEMP_GRANULARITY_META[chartState.granularity] || TEMP_GRANULARITY_META.minute;
     subtitle.textContent = `${formatDisplayDate(chartState.selectedDate)} · Xem theo ${granularityMeta.label.toLowerCase()}`;
+  };
+  const persistChartState = () => {
+    writeDashboardState({
+      chart: {
+        selectedDate: chartState.selectedDate.toISOString(),
+        granularity: chartState.granularity,
+        series: chartState.series.map((item) => ({
+          value: item.value,
+          timestamp: item.timestamp instanceof Date ? item.timestamp.toISOString() : item.timestamp,
+          label: item.label || '',
+        })),
+      },
+    });
   };
   const resizeCanvas = () => {
     const parent = canvas.parentElement;
@@ -356,12 +473,14 @@ document.addEventListener('DOMContentLoaded', function() {
       chartState.series = series;
       chartState.error = '';
     } catch (error) {
-      chartState.series = [];
-      chartState.error = 'Không tải được dữ liệu nhiệt độ từ server.';
+      chartState.error = chartState.series.length
+        ? 'Không tải được dữ liệu nhiệt độ từ server. Đang hiển thị dữ liệu đã lưu.'
+        : 'Không tải được dữ liệu nhiệt độ từ server.';
       console.warn('Không tải được lịch sử nhiệt độ:', error.message);
     } finally {
       setLoadingState(false);
       renderTemperatureChart();
+      persistChartState();
     }
   };
 
@@ -379,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chartState.series = nextSeries.slice(-720);
     chartState.error = '';
     renderTemperatureChart();
+    persistChartState();
   };
 
   window.__MEKONG_TEMP_CHART__ = {
@@ -431,6 +551,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   updateNavigationState();
+  if (chartState.series.length) {
+    renderTemperatureChart();
+  }
   loadTemperatureChart();
 });
 
@@ -509,6 +632,23 @@ document.addEventListener('DOMContentLoaded', function() {
   let lastGasAlertTime = 0;
   let lastTemperatureAlertTime = 0;
   const alerts = [];
+  const storedDashboardState = readDashboardState();
+  let isDashboardHydrating = true;
+
+  const persistControlState = (patch) => {
+    if (isDashboardHydrating) return;
+    writeDashboardState({ controls: patch });
+  };
+
+  const persistSensorState = (patch) => {
+    if (isDashboardHydrating) return;
+    writeDashboardState({ sensors: patch });
+  };
+
+  const persistAlertsState = () => {
+    if (isDashboardHydrating) return;
+    writeDashboardState({ alerts: alerts.slice(0, 5) });
+  };
 
   const connectMqtt = () => {
     if (mqttClient || typeof mqtt === 'undefined') return;
@@ -688,6 +828,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <span class="text-xs ${alert.timeClass} font-medium">${alert.time}</span>
       </div>
     `).join('');
+
+    persistAlertsState();
   };
 
   const setRgbColorByValue = (color, shouldPublish = true) => {
@@ -745,6 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (value === null || !temperatureValue) return;
 
     temperatureValue.textContent = `${formatNumber(value)}°C`;
+    persistSensorState({ temperature: value });
 
     if (value >= 35) {
       setStatus(temperatureStatus, 'Nhiệt độ cao', '#6a4b17');
@@ -771,6 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (value === null || !humidityValue) return;
 
     humidityValue.textContent = `${formatNumber(value, 0)}%`;
+    persistSensorState({ humidity: value });
 
     if (value >= 80) {
       setStatus(humidityStatus, 'Độ ẩm cao', '#6a4b17');
@@ -786,6 +930,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (value === null || !lightValue) return;
 
     lightValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">lux</span>`;
+    persistSensorState({ light: value });
 
     if (value < 25) {
       setStatus(lightStatus, 'Thiếu sáng', '#6a4b17');
@@ -801,6 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (value === null || !gasValue) return;
 
     gasValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">ppm</span>`;
+    persistSensorState({ gas: value });
 
     if (value >= 300) {
       setStatus(gasStatus, 'Nguy hiểm', '#6a4b17');
@@ -836,6 +982,8 @@ document.addEventListener('DOMContentLoaded', function() {
       motionStatusCard.classList.remove('border-b-4');
       motionStatusCard.style.borderBottomColor = '#dbe6f5';
     }
+
+    persistControlState({ motionDetected: isDetected });
   };
 
   const handleMotionMessage = (message) => {
@@ -905,6 +1053,11 @@ document.addEventListener('DOMContentLoaded', function() {
       if (autoLightToggle && autoLightToggle.checked !== autoLightOn) {
         autoLightToggle.checked = autoLightOn;
       }
+    }
+
+    const motionDetected = normalizeBoolean(controls.motionDetected ?? snapshot.motionDetected);
+    if (motionDetected !== null) {
+      updateMotionUi(motionDetected);
     }
 
     const fanOn = normalizeBoolean(controls.fanOn ?? snapshot.fanOn);
@@ -991,8 +1144,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  loadDashboardStateFromServer();
-
   const updateLightControlUi = (isOn) => {
     if (!lightControlCard || !lightControlIcon || !lightControlStatus) return;
 
@@ -1017,12 +1168,16 @@ document.addEventListener('DOMContentLoaded', function() {
       lightControlCard.style.borderBottomColor = '#dbe6f5';
       lightControlCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
+
+    persistControlState({ lightOn: isOn });
   };
 
   const updateAutoLightUi = (isOn) => {
     if (autoLightToggle && autoLightToggle.checked !== isOn) {
       autoLightToggle.checked = isOn;
     }
+
+    persistControlState({ autoLightOn: isOn });
   };
 
   const handleLightToggleChange = (isOn) => {
@@ -1066,6 +1221,8 @@ document.addEventListener('DOMContentLoaded', function() {
       fanCard.style.borderBottomColor = '#dbe6f5';
       fanCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
+
+    persistControlState({ fanOn: isOn, fanSpeed: Number.parseInt(speed, 10) || 0 });
   };
 
   const updateBuzzerUi = (isOn) => {
@@ -1088,12 +1245,16 @@ document.addEventListener('DOMContentLoaded', function() {
       buzzerCard.style.borderBottomColor = '#dbe6f5';
       buzzerCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
+
+    persistControlState({ buzzerOn: isOn });
   };
 
   const updateBuzzerDetectUi = (isOn) => {
     if (buzzerDetectToggle && buzzerDetectToggle.checked !== isOn) {
       buzzerDetectToggle.checked = isOn;
     }
+
+    persistControlState({ buzzerDetectOn: isOn });
   };
 
   const updateMainDoorUi = (isOpen) => {
@@ -1118,6 +1279,8 @@ document.addEventListener('DOMContentLoaded', function() {
       mainDoorIcon.style.backgroundColor = '#dbe6f5';
       mainDoorCard.style.borderBottomColor = '#dbe6f5';
     }
+
+    persistControlState({ mainDoorOpen: isOpen });
   };
 
   const updateAutoDoorUi = (isOn) => {
@@ -1138,7 +1301,13 @@ document.addEventListener('DOMContentLoaded', function() {
       autoDoorIcon.style.backgroundColor = '#dbe6f5';
       autoDoorCard.style.borderBottomColor = '#dbe6f5';
     }
+
+    persistControlState({ autoDoorOn: isOn });
   };
+
+  applyDashboardSnapshot(storedDashboardState);
+  loadDashboardStateFromServer();
+  isDashboardHydrating = false;
 
   if (fanToggle && fanSpeedSlider && fanSpeedValue) {
     fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
@@ -1224,6 +1393,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sendRgbState(true);
       }
     }
+
+    persistControlState({
+      rgbOn: rgbToggle ? rgbToggle.checked : true,
+      rgbColor: color,
+      rgbColorName: name,
+    });
   };
 
   colorButtons.forEach((button) => {
@@ -1242,6 +1417,7 @@ document.addEventListener('DOMContentLoaded', function() {
       rgbIcon.style.backgroundColor = '#dbe6f5';
       rgbCard.style.borderBottomColor = '#dbe6f5';
       sendRgbState(false);
+      persistControlState({ rgbOn: false });
     }
   });
 
