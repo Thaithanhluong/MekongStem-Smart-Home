@@ -121,6 +121,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const motionStatusValue = document.getElementById('motionStatusValue');
   const motionStatusText = document.getElementById('motionStatusText');
   const alertsList = document.getElementById('alertsList');
+  const temperatureValue = document.getElementById('temperatureValue');
+  const temperatureStatus = document.getElementById('temperatureStatus');
+  const humidityValue = document.getElementById('humidityValue');
+  const humidityStatus = document.getElementById('humidityStatus');
+  const lightValue = document.getElementById('lightValue');
+  const lightStatus = document.getElementById('lightStatus');
+  const gasValue = document.getElementById('gasValue');
+  const gasStatus = document.getElementById('gasStatus');
 
   if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
 
@@ -131,12 +139,18 @@ document.addEventListener('DOMContentLoaded', function() {
     fanStateTopic: 'mekongstem/smart-home/fan/state/set',
     fanSpeedTopic: 'mekongstem/smart-home/fan/speed/set',
     motionTopic: 'mekongstem/smart-home/motion/status',
+    gasTopic: 'mekongstem/smart-home/sensor/gas',
+    humidityTopic: 'mekongstem/smart-home/sensor/humidity',
+    temperatureTopic: 'mekongstem/smart-home/sensor/temperature',
+    lightTopic: 'mekongstem/smart-home/sensor/light',
   };
   let mqttClient = null;
   let isMqttConnected = false;
   let pendingRgbMessages = [];
   let motionResetTimer = null;
   let lastMotionAlertTime = 0;
+  let lastGasAlertTime = 0;
+  let lastTemperatureAlertTime = 0;
   const alerts = [
     {
       title: 'Phát hiện khí gas',
@@ -176,7 +190,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('connect', () => {
       isMqttConnected = true;
-      mqttClient.subscribe(mqttConfig.motionTopic, { qos: 0 });
+      mqttClient.subscribe([
+        mqttConfig.motionTopic,
+        mqttConfig.gasTopic,
+        mqttConfig.humidityTopic,
+        mqttConfig.temperatureTopic,
+        mqttConfig.lightTopic,
+      ], { qos: 0 });
       if (pendingRgbMessages.length) {
         const messages = [...pendingRgbMessages];
         pendingRgbMessages = [];
@@ -201,6 +221,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (topic === mqttConfig.motionTopic) {
         handleMotionMessage(message);
+      } else if (topic === mqttConfig.gasTopic) {
+        updateGas(message);
+      } else if (topic === mqttConfig.humidityTopic) {
+        updateHumidity(message);
+      } else if (topic === mqttConfig.temperatureTopic) {
+        updateTemperature(message);
+      } else if (topic === mqttConfig.lightTopic) {
+        updateLight(message);
       }
     });
   };
@@ -246,6 +274,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
+  const parseSensorValue = (message) => {
+    const value = Number.parseFloat(String(message).replace(',', '.').replace(/[^\d.-]/g, ''));
+    return Number.isFinite(value) ? value : null;
+  };
+
+  const formatNumber = (value, maximumFractionDigits = 1) => {
+    return new Intl.NumberFormat('vi-VN', {
+      maximumFractionDigits,
+    }).format(value);
+  };
+
+  const setStatus = (element, label, color = '#6f9fe8') => {
+    if (!element) return;
+
+    element.style.color = color;
+    element.innerHTML = `<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:${color}"></span> ${label}`;
+  };
+
   const renderAlerts = () => {
     if (!alertsList) return;
 
@@ -277,6 +323,105 @@ document.addEventListener('DOMContentLoaded', function() {
       timeClass: 'text-mekong-brown',
     });
     renderAlerts();
+  };
+
+  const addSensorAlert = ({ type, title, location, icon, iconClass }) => {
+    const now = Date.now();
+    const alertWindowMs = 10000;
+
+    if (type === 'gas') {
+      if (now - lastGasAlertTime < alertWindowMs) return;
+      lastGasAlertTime = now;
+    }
+
+    if (type === 'temperature') {
+      if (now - lastTemperatureAlertTime < alertWindowMs) return;
+      lastTemperatureAlertTime = now;
+    }
+
+    alerts.unshift({
+      title,
+      location,
+      time: formatCurrentTime(),
+      icon,
+      iconClass,
+      timeClass: 'text-mekong-brown',
+    });
+    renderAlerts();
+  };
+
+  const updateTemperature = (message) => {
+    const value = parseSensorValue(message);
+    if (value === null || !temperatureValue) return;
+
+    temperatureValue.textContent = `${formatNumber(value)}°C`;
+
+    if (value >= 35) {
+      setStatus(temperatureStatus, 'Nhiệt độ cao', '#5a4217');
+      addSensorAlert({
+        type: 'temperature',
+        title: 'Nhiệt độ cao',
+        location: 'Phòng khách',
+        icon: 'fa-temperature-high',
+        iconClass: 'bg-mekong-brown/10 text-mekong-brown',
+      });
+    } else if (value <= 18) {
+      setStatus(temperatureStatus, 'Nhiệt độ thấp', '#1f5fbf');
+    } else {
+      setStatus(temperatureStatus, 'Bình thường');
+    }
+  };
+
+  const updateHumidity = (message) => {
+    const value = parseSensorValue(message);
+    if (value === null || !humidityValue) return;
+
+    humidityValue.textContent = `${formatNumber(value, 0)}%`;
+
+    if (value >= 80) {
+      setStatus(humidityStatus, 'Độ ẩm cao', '#5a4217');
+    } else if (value <= 35) {
+      setStatus(humidityStatus, 'Độ ẩm thấp', '#5a4217');
+    } else {
+      setStatus(humidityStatus, 'Bình thường');
+    }
+  };
+
+  const updateLight = (message) => {
+    const value = parseSensorValue(message);
+    if (value === null || !lightValue) return;
+
+    lightValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">lux</span>`;
+
+    if (value < 100) {
+      setStatus(lightStatus, 'Thiếu sáng', '#5a4217');
+    } else if (value > 700) {
+      setStatus(lightStatus, 'Rất sáng', '#5a4217');
+    } else {
+      setStatus(lightStatus, 'Trung bình');
+    }
+  };
+
+  const updateGas = (message) => {
+    const value = parseSensorValue(message);
+    if (value === null || !gasValue) return;
+
+    gasValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">ppm</span>`;
+
+    if (value >= 300) {
+      setStatus(gasStatus, 'Nguy hiểm', '#5a4217');
+      addSensorAlert({
+        type: 'gas',
+        title: 'Phát hiện khí gas',
+        location: 'Phòng bếp',
+        icon: 'fa-fire-flame-curved',
+        iconClass: 'bg-mekong-brown/10 text-mekong-brown',
+      });
+    } else if (value >= 200) {
+      setStatus(gasStatus, 'Cần chú ý', '#5a4217');
+    } else {
+      setStatus(gasStatus, 'An toàn');
+    }
   };
 
   const updateMotionUi = (isDetected) => {
