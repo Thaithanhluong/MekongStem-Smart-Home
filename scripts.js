@@ -3,11 +3,11 @@ window.tailwind.config = {
       theme: {
         extend: {
           colors: {
-            'mekong-blue': '#1f5fbf',
-            'mekong-light-blue': '#edf5ff',
-            'mekong-sky': '#6f9fe8',
-            'mekong-brown': '#5a4217',
-            'mekong-gray': '#58667a',
+            'mekong-blue': '#2a5ea9',
+            'mekong-light-blue': '#eaf2fb',
+            'mekong-sky': '#7ca8ea',
+            'mekong-brown': '#6a4b17',
+            'mekong-gray': '#5d6775',
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
@@ -34,10 +34,10 @@ window.tailwind.config = {
       const chartHeight = height - (padding * 2);
 
       // Draw Grid Lines (Horizontal)
-      ctx.strokeStyle = '#e8eef7';
+      ctx.strokeStyle = '#dfe9f7';
       ctx.lineWidth = 1;
       ctx.font = '10px Inter';
-      ctx.fillStyle = '#58667a';
+      ctx.fillStyle = '#5d6775';
       
       for(let i = 0; i <= 4; i++) {
         const y = padding + (chartHeight / 4) * i;
@@ -64,12 +64,12 @@ window.tailwind.config = {
         ctx.lineTo(x, y);
       });
       ctx.lineTo(width - padding, height - padding);
-      ctx.fillStyle = 'rgba(31, 95, 191, 0.08)';
+      ctx.fillStyle = 'rgba(42, 94, 169, 0.1)';
       ctx.fill();
 
       // Draw Actual Line
       ctx.beginPath();
-      ctx.strokeStyle = '#1f5fbf';
+      ctx.strokeStyle = '#2a5ea9';
       ctx.lineWidth = 2;
       ctx.lineJoin = 'round';
       data.forEach((val, i) => {
@@ -87,7 +87,7 @@ window.tailwind.config = {
         
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#1f5fbf';
+      ctx.fillStyle = '#2a5ea9';
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -95,7 +95,7 @@ window.tailwind.config = {
 
         // Highlight last point
         if (i === data.length - 1) {
-            ctx.fillStyle = '#1f5fbf';
+            ctx.fillStyle = '#2a5ea9';
             ctx.fillRect(x - 20, y - 30, 40, 18);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 10px Inter';
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }).format(value);
   };
 
-  const setStatus = (element, label, color = '#6f9fe8') => {
+  const setStatus = (element, label, color = '#7ca8ea') => {
     if (!element) return;
 
     element.style.color = color;
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
     temperatureValue.textContent = `${formatNumber(value)}°C`;
 
     if (value >= 35) {
-      setStatus(temperatureStatus, 'Nhiệt độ cao', '#5a4217');
+      setStatus(temperatureStatus, 'Nhiệt độ cao', '#6a4b17');
       addSensorAlert({
         type: 'temperature',
         title: 'Nhiệt độ cao',
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
         iconClass: 'bg-mekong-brown/10 text-mekong-brown',
       });
     } else if (value <= 18) {
-      setStatus(temperatureStatus, 'Nhiệt độ thấp', '#1f5fbf');
+      setStatus(temperatureStatus, 'Nhiệt độ thấp', '#2a5ea9');
     } else {
       setStatus(temperatureStatus, 'Bình thường');
     }
@@ -403,9 +403,9 @@ document.addEventListener('DOMContentLoaded', function() {
     humidityValue.textContent = `${formatNumber(value, 0)}%`;
 
     if (value >= 80) {
-      setStatus(humidityStatus, 'Độ ẩm cao', '#5a4217');
+      setStatus(humidityStatus, 'Độ ẩm cao', '#6a4b17');
     } else if (value <= 35) {
-      setStatus(humidityStatus, 'Độ ẩm thấp', '#5a4217');
+      setStatus(humidityStatus, 'Độ ẩm thấp', '#6a4b17');
     } else {
       setStatus(humidityStatus, 'Bình thường');
     }
@@ -418,9 +418,9 @@ document.addEventListener('DOMContentLoaded', function() {
     lightValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">lux</span>`;
 
     if (value < 25) {
-      setStatus(lightStatus, 'Thiếu sáng', '#5a4217');
+      setStatus(lightStatus, 'Thiếu sáng', '#6a4b17');
     } else if (value > 90) {
-      setStatus(lightStatus, 'Rất sáng', '#5a4217');
+      setStatus(lightStatus, 'Rất sáng', '#6a4b17');
     } else {
       setStatus(lightStatus, 'Tốt');
     }
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gasValue.innerHTML = `${formatNumber(value, 0)} <span class="text-sm font-medium">ppm</span>`;
 
     if (value >= 300) {
-      setStatus(gasStatus, 'Nguy hiểm', '#5a4217');
+      setStatus(gasStatus, 'Nguy hiểm', '#6a4b17');
       addSensorAlert({
         type: 'gas',
         title: 'Phát hiện khí gas',
@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
         iconClass: 'bg-mekong-brown/10 text-mekong-brown',
       });
     } else if (value >= 200) {
-      setStatus(gasStatus, 'Cần chú ý', '#5a4217');
+      setStatus(gasStatus, 'Cần chú ý', '#6a4b17');
     } else {
       setStatus(gasStatus, 'An toàn');
     }
@@ -453,18 +453,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (isDetected) {
       motionStatusValue.textContent = 'Có người';
-      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#5a4217"></span> Đang phát hiện';
-      motionStatusValue.style.color = '#5a4217';
-      motionStatusIcon.style.backgroundColor = '#5a4217';
+      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#6a4b17"></span> Đang phát hiện';
+      motionStatusValue.style.color = '#6a4b17';
+      motionStatusIcon.style.backgroundColor = '#6a4b17';
       motionStatusCard.classList.add('border-b-4');
-      motionStatusCard.style.borderBottomColor = '#5a4217';
+      motionStatusCard.style.borderBottomColor = '#6a4b17';
     } else {
       motionStatusValue.textContent = 'Không có';
-      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#6f9fe8"></span> Không phát hiện';
+      motionStatusText.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background-color:#7ca8ea"></span> Không phát hiện';
       motionStatusValue.style.color = '#0f172a';
-      motionStatusIcon.style.backgroundColor = '#1f5fbf';
+      motionStatusIcon.style.backgroundColor = '#2a5ea9';
       motionStatusCard.classList.remove('border-b-4');
-      motionStatusCard.style.borderBottomColor = '#e2e8f0';
+      motionStatusCard.style.borderBottomColor = '#dbe6f5';
     }
   };
 
@@ -513,15 +513,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (isOn) {
       lightControlStatus.textContent = 'Bật';
-      lightControlStatus.style.color = '#1f5fbf';
-      lightControlIcon.style.backgroundColor = '#1f5fbf';
-      lightControlCard.style.borderBottomColor = '#1f5fbf';
+      lightControlStatus.style.color = '#2a5ea9';
+      lightControlIcon.style.backgroundColor = '#2a5ea9';
+      lightControlCard.style.borderBottomColor = '#2a5ea9';
       lightControlCard.classList.add('border-b-4', 'border-mekong-blue');
     } else {
       lightControlStatus.textContent = 'Tắt';
-      lightControlStatus.style.color = '#94a3b8';
-      lightControlIcon.style.backgroundColor = '#cbd5e1';
-      lightControlCard.style.borderBottomColor = '#e2e8f0';
+      lightControlStatus.style.color = '#5d6775';
+      lightControlIcon.style.backgroundColor = '#dbe6f5';
+      lightControlCard.style.borderBottomColor = '#dbe6f5';
       lightControlCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
   };
@@ -530,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!autoLightStatus) return;
 
     autoLightStatus.textContent = isOn ? 'Auto bật' : 'Auto tắt';
-    autoLightStatus.style.color = isOn ? '#1f5fbf' : '#94a3b8';
+    autoLightStatus.style.color = isOn ? '#2a5ea9' : '#5d6775';
   };
 
   const handleLightToggleChange = (isOn) => {
@@ -563,15 +563,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (isOn) {
       fanStatus.textContent = `${speed}%`;
-      fanStatus.style.color = '#1f5fbf';
-      fanIcon.style.backgroundColor = '#1f5fbf';
-      fanCard.style.borderBottomColor = '#1f5fbf';
+      fanStatus.style.color = '#2a5ea9';
+      fanIcon.style.backgroundColor = '#2a5ea9';
+      fanCard.style.borderBottomColor = '#2a5ea9';
       fanCard.classList.add('border-b-4', 'border-mekong-blue');
     } else {
       fanStatus.textContent = 'Tắt';
-      fanStatus.style.color = '#94a3b8';
-      fanIcon.style.backgroundColor = '#cbd5e1';
-      fanCard.style.borderBottomColor = '#e2e8f0';
+      fanStatus.style.color = '#5d6775';
+      fanIcon.style.backgroundColor = '#dbe6f5';
+      fanCard.style.borderBottomColor = '#dbe6f5';
       fanCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
   };
@@ -585,15 +585,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (isOn) {
       buzzerStatus.textContent = 'Bật';
-      buzzerStatus.style.color = '#1f5fbf';
-      buzzerIcon.style.backgroundColor = '#1f5fbf';
-      buzzerCard.style.borderBottomColor = '#1f5fbf';
+      buzzerStatus.style.color = '#2a5ea9';
+      buzzerIcon.style.backgroundColor = '#2a5ea9';
+      buzzerCard.style.borderBottomColor = '#2a5ea9';
       buzzerCard.classList.add('border-b-4', 'border-mekong-blue');
     } else {
       buzzerStatus.textContent = 'Tắt';
-      buzzerStatus.style.color = '#94a3b8';
-      buzzerIcon.style.backgroundColor = '#cbd5e1';
-      buzzerCard.style.borderBottomColor = '#e2e8f0';
+      buzzerStatus.style.color = '#5d6775';
+      buzzerIcon.style.backgroundColor = '#dbe6f5';
+      buzzerCard.style.borderBottomColor = '#dbe6f5';
       buzzerCard.classList.remove('border-b-4', 'border-mekong-blue');
     }
   };
@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   const setRgbColor = (button, shouldPublish = true) => {
-    const color = button.dataset.color || '#1f5fbf';
+    const color = button.dataset.color || '#2a5ea9';
     const name = button.dataset.name || 'Tùy chọn';
 
     colorButtons.forEach((item) => {
@@ -685,9 +685,9 @@ document.addEventListener('DOMContentLoaded', function() {
       setRgbColor(selected);
     } else {
       rgbStatus.textContent = 'Tắt';
-      rgbStatus.style.color = '#94a3b8';
-      rgbIcon.style.backgroundColor = '#94a3b8';
-      rgbCard.style.borderBottomColor = '#e2e8f0';
+      rgbStatus.style.color = '#5d6775';
+      rgbIcon.style.backgroundColor = '#dbe6f5';
+      rgbCard.style.borderBottomColor = '#dbe6f5';
       sendRgbState(false);
     }
   });

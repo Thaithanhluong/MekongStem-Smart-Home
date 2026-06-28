@@ -1,14 +1,17 @@
 ﻿body {
-      background-color: #f3f7fc;
+      background:
+        radial-gradient(circle at top left, rgba(42, 94, 169, 0.08), transparent 26%),
+        radial-gradient(circle at top right, rgba(106, 75, 23, 0.06), transparent 24%),
+        linear-gradient(180deg, #fbfdff 0%, #f6f9fe 48%, #edf4fc 100%);
     }
     .sidebar-gradient {
-      background: linear-gradient(180deg, #ffffff 0%, #ffffff 72%, #edf5ff 88%, #1f5fbf 100%);
+      background: linear-gradient(180deg, #ffffff 0%, #f9fbff 66%, #edf4fc 86%, #2a5ea9 100%);
     }
     .card-shadow {
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      box-shadow: 0 8px 24px -12px rgba(42, 94, 169, 0.22), 0 2px 4px -1px rgba(15, 23, 42, 0.05);
     }
     .toggle-checkbox:checked + .toggle-label {
-      background-color: #1f5fbf;
+      background-color: #2a5ea9;
     }
     .toggle-checkbox:checked + .toggle-label::after {
       transform: translateX(100%);
@@ -56,7 +59,7 @@
     }
 
     .honeycomb-cell.is-selected {
-      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1f5fbf, 0 2px 5px rgba(15, 23, 42, 0.2);
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2a5ea9, 0 2px 5px rgba(15, 23, 42, 0.2);
       transform: scale(1.08);
     }
 
@@ -72,7 +75,7 @@
     .fan-speed-slider {
       width: 100%;
       height: 1rem;
-      accent-color: #1f5fbf;
+      accent-color: #2a5ea9;
       cursor: pointer;
     }
     [data-purpose="navigation-sidebar"] {
