@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     lightStateTopic: 'mekongstem/smart-home/light',
     autoLightTopic: 'mekongstem/smart-home/auto-light',
   };
+  const dashboardStateUrl = window.__DASHBOARD_STATE_URL__ || '/api/dashboard/state';
   let mqttClient = null;
   let isMqttConnected = false;
   let pendingMqttMessages = [];
@@ -287,6 +288,15 @@ document.addEventListener('DOMContentLoaded', function() {
     return Number.isFinite(value) ? value : null;
   };
 
+  const normalizeBoolean = (value) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+      return ['1', 'true', 'on', 'yes', 'open', 'detected'].includes(value.trim().toLowerCase());
+    }
+    return null;
+  };
+
   const formatNumber = (value, maximumFractionDigits = 1) => {
     return new Intl.NumberFormat('vi-VN', {
       maximumFractionDigits,
@@ -331,6 +341,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <span class="text-xs ${alert.timeClass} font-medium">${alert.time}</span>
       </div>
     `).join('');
+  };
+
+  const setRgbColorByValue = (color, shouldPublish = true) => {
+    const targetColor = String(color || '').trim().toLowerCase();
+    const button = Array.from(colorButtons).find((item) => String(item.dataset.color || '').trim().toLowerCase() === targetColor);
+
+    if (button) {
+      setRgbColor(button, shouldPublish);
+    }
   };
 
   const addMotionAlert = () => {
@@ -498,7 +517,120 @@ document.addEventListener('DOMContentLoaded', function() {
     renderAlerts();
   };
 
-  seedAlertsFromCurrentDashboard();
+  const applyDashboardSnapshot = (snapshot) => {
+    if (!snapshot || typeof snapshot !== 'object') return;
+
+    const sensors = snapshot.sensors && typeof snapshot.sensors === 'object' ? snapshot.sensors : snapshot;
+    const controls = snapshot.controls && typeof snapshot.controls === 'object' ? snapshot.controls : snapshot;
+
+    const temperature = sensors.temperature ?? sensors.temp ?? snapshot.temperature ?? snapshot.temp;
+    if (temperature != null) {
+      updateTemperature(temperature);
+    }
+
+    const humidity = sensors.humidity ?? snapshot.humidity;
+    if (humidity != null) {
+      updateHumidity(humidity);
+    }
+
+    const light = sensors.light ?? snapshot.light;
+    if (light != null) {
+      updateLight(light);
+    }
+
+    const gas = sensors.gas ?? snapshot.gas;
+    if (gas != null) {
+      updateGas(gas);
+    }
+
+    const lightOn = normalizeBoolean(controls.lightOn ?? snapshot.lightOn ?? controls.light ?? snapshot.light);
+    if (lightOn !== null) {
+      updateLightControlUi(lightOn);
+    }
+
+    const autoLightOn = normalizeBoolean(controls.autoLightOn ?? snapshot.autoLightOn ?? controls.autoLight ?? snapshot.autoLight);
+    if (autoLightOn !== null) {
+      updateAutoLightUi(autoLightOn);
+      if (autoLightToggle && autoLightToggle.checked !== autoLightOn) {
+        autoLightToggle.checked = autoLightOn;
+      }
+    }
+
+    const fanOn = normalizeBoolean(controls.fanOn ?? snapshot.fanOn);
+    if (fanOn !== null) {
+      if (fanToggle && fanToggle.checked !== fanOn) {
+        fanToggle.checked = fanOn;
+      }
+      if (fanSpeedSlider && controls.fanSpeed !== undefined) {
+        fanSpeedSlider.value = String(controls.fanSpeed);
+        if (fanSpeedValue) {
+          fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
+        }
+      }
+      updateFanUi(fanOn);
+    }
+
+    const buzzerOn = normalizeBoolean(controls.buzzerOn ?? snapshot.buzzerOn);
+    if (buzzerOn !== null) {
+      updateBuzzerUi(buzzerOn);
+    }
+
+    const buzzerDetectOn = normalizeBoolean(controls.buzzerDetectOn ?? snapshot.buzzerDetectOn);
+    if (buzzerDetectOn !== null) {
+      updateBuzzerDetectUi(buzzerDetectOn);
+    }
+
+    const rgbOn = normalizeBoolean(controls.rgbOn ?? snapshot.rgbOn);
+    if (rgbOn !== null && rgbToggle && rgbToggle.checked !== rgbOn) {
+      rgbToggle.checked = rgbOn;
+    }
+
+    if (controls.rgbColor ?? snapshot.rgbColor) {
+      setRgbColorByValue(controls.rgbColor ?? snapshot.rgbColor, false);
+    } else if (controls.rgbColorName ?? snapshot.rgbColorName) {
+      const targetName = String(controls.rgbColorName ?? snapshot.rgbColorName).trim().toLowerCase();
+      const button = Array.from(colorButtons).find((item) => String(item.dataset.name || '').trim().toLowerCase() === targetName);
+      if (button) {
+        setRgbColor(button, false);
+      }
+    }
+
+    const alertItems = Array.isArray(snapshot.alerts) ? snapshot.alerts : Array.isArray(snapshot.recentAlerts) ? snapshot.recentAlerts : null;
+    if (alertItems) {
+      alerts.length = 0;
+      alertItems.slice(0, 5).forEach((item) => {
+        alerts.push({
+          title: item.title || item.name || 'Cảnh báo',
+          location: item.location || item.room || '',
+          time: item.time || item.createdAt || formatCurrentTime(),
+          icon: item.icon || 'fa-bell',
+          iconClass: item.iconClass || 'bg-mekong-light-blue text-mekong-blue',
+          timeClass: item.timeClass || 'text-mekong-brown',
+        });
+      });
+      renderAlerts();
+    }
+  };
+
+  const loadDashboardStateFromServer = async () => {
+    try {
+      const response = await fetch(`${dashboardStateUrl}${dashboardStateUrl.includes('?') ? '&' : '?'}ts=${Date.now()}`, {
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const snapshot = await response.json();
+      applyDashboardSnapshot(snapshot);
+    } catch (error) {
+      console.warn('Không tải được trạng thái từ server:', error.message);
+      seedAlertsFromCurrentDashboard();
+    }
+  };
+
+  loadDashboardStateFromServer();
 
   const updateLightControlUi = (isOn) => {
     if (!lightControlCard || !lightControlIcon || !lightControlStatus) return;
