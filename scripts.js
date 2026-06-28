@@ -103,3 +103,52 @@ window.tailwind.config = {
         }
       });
     });
+
+document.addEventListener('DOMContentLoaded', function() {
+  const rgbCard = document.getElementById('rgbLedCard');
+  const rgbIcon = document.getElementById('rgbLedIcon');
+  const rgbStatus = document.getElementById('rgbLedStatus');
+  const colorButtons = document.querySelectorAll('.honeycomb-cell');
+  const rgbToggle = rgbCard?.querySelector('.toggle-checkbox');
+
+  if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
+
+  const setRgbColor = (button) => {
+    const color = button.dataset.color || '#1f5fbf';
+    const name = button.dataset.name || 'Tùy chọn';
+
+    colorButtons.forEach((item) => {
+      item.classList.remove('is-selected');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('role', 'radio');
+    });
+
+    button.classList.add('is-selected');
+    button.setAttribute('aria-checked', 'true');
+    rgbIcon.style.backgroundColor = color;
+    rgbCard.style.borderBottomColor = color;
+
+    if (!rgbToggle || rgbToggle.checked) {
+      rgbStatus.textContent = name;
+      rgbStatus.style.color = color;
+    }
+  };
+
+  colorButtons.forEach((button) => {
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-checked', button.classList.contains('is-selected') ? 'true' : 'false');
+    button.addEventListener('click', () => setRgbColor(button));
+  });
+
+  rgbToggle?.addEventListener('change', () => {
+    const selected = document.querySelector('.honeycomb-cell.is-selected');
+    if (rgbToggle.checked && selected) {
+      setRgbColor(selected);
+    } else {
+      rgbStatus.textContent = 'Tắt';
+      rgbStatus.style.color = '#94a3b8';
+      rgbIcon.style.backgroundColor = '#94a3b8';
+      rgbCard.style.borderBottomColor = '#e2e8f0';
+    }
+  });
+});

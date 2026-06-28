@@ -195,14 +195,32 @@
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
 </div>
-<!-- AC Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue">
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
-<i class="fa-solid fa-snowflake"></i>
+<!-- LED RGB Toggle -->
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue" id="rgbLedCard">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="rgbLedIcon">
+<i class="fa-solid fa-lightbulb"></i>
 </div>
 <div class="text-center">
-<p class="text-xs font-semibold">Điều hòa</p>
-<p class="text-xs text-mekong-blue">24°C</p>
+<p class="text-xs font-semibold">LED RGB</p>
+<p class="text-xs text-mekong-blue" id="rgbLedStatus">Xanh dương</p>
+</div>
+<div aria-label="Chọn màu LED RGB" class="honeycomb-picker" role="radiogroup">
+<div class="honeycomb-row">
+<button aria-label="Màu đỏ" class="honeycomb-cell" data-color="#ef4444" data-name="Đỏ" style="--swatch:#ef4444" type="button"></button>
+<button aria-label="Màu cam" class="honeycomb-cell" data-color="#f97316" data-name="Cam" style="--swatch:#f97316" type="button"></button>
+<button aria-label="Màu vàng" class="honeycomb-cell" data-color="#facc15" data-name="Vàng" style="--swatch:#facc15" type="button"></button>
+</div>
+<div class="honeycomb-row honeycomb-row-wide">
+<button aria-label="Màu xanh lá" class="honeycomb-cell" data-color="#22c55e" data-name="Xanh lá" style="--swatch:#22c55e" type="button"></button>
+<button aria-label="Màu xanh ngọc" class="honeycomb-cell" data-color="#06b6d4" data-name="Xanh ngọc" style="--swatch:#06b6d4" type="button"></button>
+<button aria-label="Màu xanh dương" aria-checked="true" class="honeycomb-cell is-selected" data-color="#1f5fbf" data-name="Xanh dương" role="radio" style="--swatch:#1f5fbf" type="button"></button>
+<button aria-label="Màu tím" class="honeycomb-cell" data-color="#8b5cf6" data-name="Tím" style="--swatch:#8b5cf6" type="button"></button>
+</div>
+<div class="honeycomb-row">
+<button aria-label="Màu hồng" class="honeycomb-cell" data-color="#ec4899" data-name="Hồng" style="--swatch:#ec4899" type="button"></button>
+<button aria-label="Màu trắng" class="honeycomb-cell" data-color="#f8fafc" data-name="Trắng" style="--swatch:#f8fafc" type="button"></button>
+<button aria-label="Màu xanh biển" class="honeycomb-cell" data-color="#0ea5e9" data-name="Xanh biển" style="--swatch:#0ea5e9" type="button"></button>
+</div>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
 <input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
@@ -359,9 +377,9 @@
 <!-- Item 3 -->
 <div class="flex items-center gap-3">
 <div class="w-8 h-8 bg-mekong-blue text-white rounded-lg flex items-center justify-center">
-<i class="fa-solid fa-snowflake text-sm"></i>
+<i class="fa-solid fa-lightbulb text-sm"></i>
 </div>
-<span class="text-xs font-semibold flex-1">Điều hòa phòng khách</span>
+<span class="text-xs font-semibold flex-1">LED RGB phòng khách</span>
 <label class="relative inline-flex items-center cursor-pointer">
 <input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
