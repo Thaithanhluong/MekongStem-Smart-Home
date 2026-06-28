@@ -271,18 +271,32 @@
 </label>
 </div>
 <!-- Buzzer -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2">
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col gap-3" id="buzzerCard">
+<div class="flex flex-col items-center gap-2">
+<div class="w-10 h-10 bg-slate-300 text-white rounded-full flex items-center justify-center" id="buzzerIcon">
 <i class="fa-solid fa-volume-high"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">Buzzer</p>
-<p class="text-xs text-slate-400">Tắt</p>
+<p class="text-xs text-slate-400" id="buzzerStatus">Tắt</p>
 </div>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between gap-3">
+<span class="text-[10px] text-slate-500 leading-tight">Bật / tắt còi</span>
 <label class="relative inline-flex items-center cursor-pointer">
-<input class="sr-only toggle-checkbox" type="checkbox"/>
+<input class="sr-only toggle-checkbox" id="buzzerToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
+</div>
+<div class="flex items-center justify-between gap-3">
+<span class="text-[10px] text-slate-500 leading-tight">Phát âm cảnh báo khi thấy người</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-checkbox" id="buzzerDetectToggle" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+</label>
+</div>
+</div>
 </div>
 </div>
 </div>

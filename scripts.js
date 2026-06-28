@@ -116,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const fanToggle = document.getElementById('fanToggle');
   const fanSpeedSlider = document.getElementById('fanSpeedSlider');
   const fanSpeedValue = document.getElementById('fanSpeedValue');
+  const buzzerCard = document.getElementById('buzzerCard');
+  const buzzerIcon = document.getElementById('buzzerIcon');
+  const buzzerStatus = document.getElementById('buzzerStatus');
+  const buzzerToggle = document.getElementById('buzzerToggle');
+  const buzzerDetectToggle = document.getElementById('buzzerDetectToggle');
   const lightControlCard = document.getElementById('lightControlCard');
   const lightControlIcon = document.getElementById('lightControlIcon');
   const lightControlStatus = document.getElementById('lightControlStatus');
@@ -146,6 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
     rgbColorTopic: 'mekongstem/smart-home/led-rgb/color/set',
     fanStateTopic: 'mekongstem/smart-home/fan/state/set',
     fanSpeedTopic: 'mekongstem/smart-home/fan/speed/set',
+    buzzerStateTopic: 'mekongstem/smart-home/buzzer',
+    buzzerDetectStateTopic: 'mekongstem/smart-home/buzzer-when-detect',
     motionTopic: 'mekongstem/smart-home/motion/status',
     gasTopic: 'mekongstem/smart-home/sensor/gas',
     humidityTopic: 'mekongstem/smart-home/sensor/humidity',
@@ -246,6 +253,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const sendFanSpeed = (speed) => {
     publishMqttMessage(mqttConfig.fanSpeedTopic, String(speed));
+  };
+
+  const sendBuzzerState = (isOn) => {
+    publishMqttMessage(mqttConfig.buzzerStateTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  const sendBuzzerDetectState = (isOn) => {
+    publishMqttMessage(mqttConfig.buzzerDetectStateTopic, isOn ? 'ON' : 'OFF');
   };
 
   const sendLightState = (isOn) => {
@@ -561,6 +576,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
+  const updateBuzzerUi = (isOn) => {
+    if (!buzzerCard || !buzzerIcon || !buzzerStatus) return;
+
+    if (buzzerToggle && buzzerToggle.checked !== isOn) {
+      buzzerToggle.checked = isOn;
+    }
+
+    if (isOn) {
+      buzzerStatus.textContent = 'Bật';
+      buzzerStatus.style.color = '#1f5fbf';
+      buzzerIcon.style.backgroundColor = '#1f5fbf';
+      buzzerCard.style.borderBottomColor = '#1f5fbf';
+      buzzerCard.classList.add('border-b-4', 'border-mekong-blue');
+    } else {
+      buzzerStatus.textContent = 'Tắt';
+      buzzerStatus.style.color = '#94a3b8';
+      buzzerIcon.style.backgroundColor = '#cbd5e1';
+      buzzerCard.style.borderBottomColor = '#e2e8f0';
+      buzzerCard.classList.remove('border-b-4', 'border-mekong-blue');
+    }
+  };
+
+  const updateBuzzerDetectUi = (isOn) => {
+    if (buzzerDetectToggle && buzzerDetectToggle.checked !== isOn) {
+      buzzerDetectToggle.checked = isOn;
+    }
+  };
+
   if (fanToggle && fanSpeedSlider && fanSpeedValue) {
     fanSpeedValue.textContent = `${fanSpeedSlider.value}%`;
     updateFanUi(fanToggle.checked);
@@ -586,6 +629,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (fanToggle.checked) {
         sendFanState(true);
       }
+    });
+  }
+
+  if (buzzerToggle) {
+    updateBuzzerUi(buzzerToggle.checked);
+    buzzerToggle.addEventListener('change', () => {
+      updateBuzzerUi(buzzerToggle.checked);
+      sendBuzzerState(buzzerToggle.checked);
+    });
+  }
+
+  if (buzzerDetectToggle) {
+    updateBuzzerDetectUi(buzzerDetectToggle.checked);
+    buzzerDetectToggle.addEventListener('change', () => {
+      updateBuzzerDetectUi(buzzerDetectToggle.checked);
+      sendBuzzerDetectState(buzzerDetectToggle.checked);
     });
   }
 
