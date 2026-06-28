@@ -99,6 +99,9 @@
 <i class="fa-regular fa-bell text-xl"></i>
 </button>
 </div>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn tổng quan" aria-controls="helpPopover" aria-expanded="false" data-help-key="header">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
 <i class="fa-regular fa-sun text-xl"></i>
 </button>
@@ -107,6 +110,12 @@
 <!-- Dashboard Grid -->
 <div class="px-8 pb-12 space-y-6">
 <!-- BEGIN: Top Status Cards -->
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold text-mekong-blue">CHỈ SỐ NHANH</h3>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn chỉ số nhanh" aria-controls="helpPopover" aria-expanded="false" data-help-key="status">
+<i class="fa-solid fa-circle-question"></i>
+</button>
+</div>
 <div class="grid grid-cols-4 gap-4" data-purpose="top-status-cards">
 <!-- Temperature -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
@@ -158,10 +167,18 @@
 <div class="grid grid-cols-12 gap-6">
 <!-- Living Room Controls -->
 <div class="col-span-4" data-purpose="living-room-controls">
-<h3 class="text-lg font-bold text-mekong-blue mb-4">PHÒNG KHÁCH</h3>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-mekong-blue">PHÒNG KHÁCH</h3>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn phòng khách" aria-controls="helpPopover" aria-expanded="false" data-help-key="living-room">
+<i class="fa-solid fa-circle-question"></i>
+</button>
+</div>
 <div class="grid grid-cols-3 gap-4">
 <!-- Light Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center justify-between gap-4 min-h-[12.75rem] border-b-4 border-mekong-blue" id="lightControlCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center justify-between gap-4 min-h-[12.75rem] border-b-4 border-mekong-blue relative" id="lightControlCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn đèn" aria-controls="helpPopover" aria-expanded="false" data-help-key="light">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="lightControlIcon">
 <i class="fa-solid fa-lightbulb"></i>
 </div>
@@ -182,7 +199,10 @@
 </div>
 </div>
 <!-- Fan Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2" id="fanCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 relative" id="fanCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn quạt" aria-controls="helpPopover" aria-expanded="false" data-help-key="fan">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="w-10 h-10 bg-[#dbe6f5] text-white rounded-full flex items-center justify-center" id="fanIcon">
 <i class="fa-solid fa-fan"></i>
 </div>
@@ -203,7 +223,10 @@
 </label>
 </div>
 <!-- LED RGB Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue" id="rgbLedCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue relative" id="rgbLedCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn LED RGB" aria-controls="helpPopover" aria-expanded="false" data-help-key="rgb">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="rgbLedIcon">
 <i class="fa-solid fa-lightbulb"></i>
 </div>
@@ -234,7 +257,10 @@
 </label>
 </div>
 <!-- Main Door -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2" id="mainDoorCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 relative" id="mainDoorCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn cửa chính" aria-controls="helpPopover" aria-expanded="false" data-help-key="main-door">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="mainDoorIcon">
 <i class="fa-solid fa-door-closed"></i>
 </div>
@@ -247,7 +273,10 @@
 </button>
 </div>
 <!-- Auto Door -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue" id="autoDoorCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue relative" id="autoDoorCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn cửa tự động" aria-controls="helpPopover" aria-expanded="false" data-help-key="auto-door">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="w-10 h-10 bg-mekong-brown text-white rounded-full flex items-center justify-center" id="autoDoorIcon">
 <i class="fa-solid fa-door-open"></i>
 </div>
@@ -261,7 +290,10 @@
 </label>
 </div>
 <!-- Buzzer -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col gap-3" id="buzzerCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col gap-3 relative" id="buzzerCard">
+<button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn buzzer" aria-controls="helpPopover" aria-expanded="false" data-help-key="buzzer">
+<i class="fa-solid fa-circle-question"></i>
+</button>
 <div class="flex flex-col items-center gap-2">
 <div class="w-10 h-10 bg-[#dbe6f5] text-white rounded-full flex items-center justify-center" id="buzzerIcon">
 <i class="fa-solid fa-volume-high"></i>
@@ -284,7 +316,12 @@
 </div>
 <!-- System Graphic -->
 <div class="col-span-4" data-purpose="system-graphic">
-<h3 class="text-lg font-bold text-mekong-blue mb-4">MEKONG STEM - NHÀ THÔNG MINH</h3>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-mekong-blue">MEKONG STEM - NHÀ THÔNG MINH</h3>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn sơ đồ hệ thống" aria-controls="helpPopover" aria-expanded="false" data-help-key="system">
+<i class="fa-solid fa-circle-question"></i>
+</button>
+</div>
 <div class="bg-white p-8 rounded-2xl card-shadow flex items-center justify-center relative overflow-hidden h-[calc(100%-2.5rem)]">
 <!-- Decorative circuits -->
 <div class="absolute inset-0 opacity-10 pointer-events-none">
@@ -306,7 +343,12 @@
 </div>
 <!-- Alerts -->
 <div class="col-span-4" data-purpose="alerts-list">
-<h3 class="text-lg font-bold text-mekong-blue mb-4">CẢNH BÁO</h3>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-mekong-blue">CẢNH BÁO</h3>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn cảnh báo" aria-controls="helpPopover" aria-expanded="false" data-help-key="alerts">
+<i class="fa-solid fa-circle-question"></i>
+</button>
+</div>
 <div class="bg-white p-4 rounded-2xl card-shadow h-[calc(100%-2.5rem)] flex flex-col">
 <div class="space-y-4 flex-1" id="alertsList"></div>
 <a class="mt-4 pt-4 border-t border-[#dbe6f5] flex items-center justify-between text-xs text-mekong-blue font-bold" href="#">
@@ -324,7 +366,12 @@
 <div class="flex flex-col gap-4">
 <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
 <div>
+<div class="flex items-center gap-3">
 <h3 class="text-lg font-bold text-mekong-blue">BIỂU ĐỒ NHIỆT ĐỘ</h3>
+<button class="help-trigger" type="button" aria-label="Mở hướng dẫn biểu đồ nhiệt độ" aria-controls="helpPopover" aria-expanded="false" data-help-key="chart">
+<i class="fa-solid fa-circle-question"></i>
+</button>
+</div>
 <p class="text-xs text-slate-500 mt-1" id="temperatureChartSubtitle">Đang tải dữ liệu nhiệt độ từ server...</p>
 </div>
 <div class="flex flex-wrap items-center gap-2">
@@ -364,5 +411,6 @@ sau >
 </main>
 <!-- END: Main Content Area -->
 </div>
+<div aria-hidden="true" class="help-popover" id="helpPopover" role="dialog"></div>
 
 </body></html>

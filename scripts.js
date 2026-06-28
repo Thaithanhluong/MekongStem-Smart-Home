@@ -1250,3 +1250,235 @@ document.addEventListener('DOMContentLoaded', function() {
     setRgbColor(initialSelected, false);
   }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+  const triggers = document.querySelectorAll('.help-trigger');
+  const popover = document.getElementById('helpPopover');
+  if (!triggers.length || !popover) return;
+
+  const helpContents = {
+    header: {
+      title: 'Hướng dẫn nhanh',
+      icon: 'fa-circle-info',
+      items: [
+        'Màu xanh là trạng thái đang hoạt động, màu xám là đang tắt hoặc chưa kích hoạt.',
+        'Nhấn vào nút <code>?</code> ở từng card để xem chú thích đúng với chức năng của card đó.',
+        'Các tip trong khung này được viết ngắn gọn để bạn xem nhanh ngay trên màn hình.',
+      ],
+    },
+    status: {
+      title: 'Chỉ số nhanh',
+      icon: 'fa-gauge-high',
+      items: [
+        'Nhiệt độ, độ ẩm, ánh sáng và gas được cập nhật theo dữ liệu cảm biến.',
+        'Nếu chỉ số đổi sang màu nâu, đó là dấu hiệu cần chú ý hơn mức bình thường.',
+        'Bạn có thể xem chi tiết lịch sử ở biểu đồ phía dưới.',
+      ],
+    },
+    'living-room': {
+      title: 'Phòng khách',
+      icon: 'fa-plug-circle-check',
+      items: [
+        'Đèn RGB: <code>D9 - D10</code>',
+        'Khí gas: <code>A2</code>',
+        'Ánh sáng: <code>A0</code>',
+        'Còi: <code>D5 - D6</code>',
+        'Module USB: <code>D7 - D8</code>',
+        'PIR: <code>D3</code>',
+        'Quạt: <code>V9</code>, tốc độ quạt <code>V10</code>',
+        'Đèn: <code>V1</code>, màu đèn: <code>V2</code>',
+      ],
+    },
+    light: {
+      title: 'Điều khiển đèn',
+      icon: 'fa-lightbulb',
+      items: [
+        'Bật hoặc tắt đèn bằng công tắc chính ở giữa card.',
+        'Công tắc <code>Tự động</code> dùng để cho hệ thống tự xử lý theo ngữ cảnh.',
+        'Giữ bố cục gọn để nhìn trạng thái thật rõ trên màn hình nhỏ.',
+      ],
+    },
+    fan: {
+      title: 'Điều khiển quạt',
+      icon: 'fa-fan',
+      items: [
+        'Thanh trượt là nơi chỉnh tốc độ quạt theo từng nấc 10%.',
+        'Khi quạt tắt, tốc độ vẫn được lưu để bật lại là dùng tiếp.',
+        'Nếu tốc độ chưa đổi, hãy thử bật quạt trước rồi kéo thanh trượt.',
+      ],
+    },
+    rgb: {
+      title: 'LED RGB',
+      icon: 'fa-palette',
+      items: [
+        'Chọn màu trực tiếp trên lưới tổ ong bên dưới.',
+        'Ô đang chọn sẽ sáng nổi bật để bạn biết màu hiện hành.',
+        'Nút <code>?</code> này chỉ là trợ giúp, không làm đổi màu đèn.',
+      ],
+    },
+    'main-door': {
+      title: 'Cửa chính',
+      icon: 'fa-door-closed',
+      items: [
+        'Nhấn nút khóa/mở để đổi trạng thái cửa chính.',
+        'Biểu tượng sẽ chuyển sang mở khóa khi cửa đang mở.',
+        'Trạng thái luôn đồng bộ với dữ liệu MQTT của hệ thống.',
+      ],
+    },
+    'auto-door': {
+      title: 'Cửa tự động',
+      icon: 'fa-door-open',
+      items: [
+        'Bật để cửa tự động xử lý theo logic của bộ điều khiển.',
+        'Tắt khi muốn kiểm soát thủ công.',
+        'Màu xanh là đang bật, màu xám là đang tắt.',
+      ],
+    },
+    buzzer: {
+      title: 'Buzzer',
+      icon: 'fa-volume-high',
+      items: [
+        'Buzzer có thể dùng để phát âm cảnh báo khi phát hiện người.',
+        'Nếu không cần âm báo, hãy tắt công tắc bên dưới.',
+        'Tip: dùng ngắn âm lượng vừa phải để không gây ồn cho phòng.',
+      ],
+    },
+    system: {
+      title: 'Sơ đồ hệ thống',
+      icon: 'fa-house-signal',
+      items: [
+        'Khung giữa trang là minh hoạ trạng thái ngôi nhà thông minh.',
+        'Phần này giúp bạn nhìn nhanh tổng thể chứ không phải nút điều khiển.',
+        'Các đường nét màu xanh giữ đúng tông chủ đề của dashboard.',
+      ],
+    },
+    alerts: {
+      title: 'Cảnh báo',
+      icon: 'fa-bell',
+      items: [
+        'Danh sách này gom các cảnh báo mới nhất trong hệ thống.',
+        'Khi thấy cảnh báo màu nâu, đó thường là nhóm cần chú ý hơn.',
+        'Nếu danh sách dài, hãy cuộn xuống để xem đầy đủ.',
+      ],
+    },
+    chart: {
+      title: 'Biểu đồ nhiệt độ',
+      icon: 'fa-chart-line',
+      items: [
+        'Chọn ngày bằng nút trước, hôm nay hoặc sau để xem dữ liệu khác nhau.',
+        'Dropdown cho phép đổi mức chi tiết: giây, phút hoặc giờ.',
+        'Điểm cuối cùng trên đường biểu đồ sẽ hiện nhãn giá trị nổi bật.',
+      ],
+    },
+  };
+
+  let activeTrigger = null;
+
+  const closePopover = () => {
+    popover.classList.remove('is-visible');
+    popover.setAttribute('aria-hidden', 'true');
+    popover.style.visibility = '';
+    if (activeTrigger) {
+      activeTrigger.setAttribute('aria-expanded', 'false');
+    }
+    activeTrigger = null;
+  };
+
+  const renderPopover = (key) => {
+    const content = helpContents[key] || helpContents.header;
+    const items = content.items.map((item) => `<li>${item}</li>`).join('');
+    popover.innerHTML = `
+      <div class="help-popover__title">
+        <i class="fa-solid ${content.icon}"></i>
+        <span>${content.title}</span>
+      </div>
+      <div class="help-popover__body">
+        <ul>${items}</ul>
+      </div>
+    `;
+  };
+
+  const positionPopover = (trigger) => {
+    popover.style.visibility = 'hidden';
+    popover.classList.add('is-visible');
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const padding = 10;
+    const gap = 12;
+    const spaceAbove = triggerRect.top;
+    const spaceBelow = window.innerHeight - triggerRect.bottom;
+    let placement = spaceAbove >= popoverRect.height + gap || spaceAbove >= spaceBelow ? 'top' : 'bottom';
+    let top = placement === 'top'
+      ? triggerRect.top - popoverRect.height - gap
+      : triggerRect.bottom + gap;
+    let left = triggerRect.left + (triggerRect.width / 2) - (popoverRect.width / 2);
+
+    if (placement === 'top' && top < padding) {
+      placement = 'bottom';
+      top = triggerRect.bottom + gap;
+    } else if (placement === 'bottom' && top + popoverRect.height > window.innerHeight - padding) {
+      placement = 'top';
+      top = triggerRect.top - popoverRect.height - gap;
+    }
+
+    left = Math.max(padding, Math.min(left, window.innerWidth - popoverRect.width - padding));
+    top = Math.max(padding, Math.min(top, window.innerHeight - popoverRect.height - padding));
+
+    popover.dataset.placement = placement;
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+    popover.style.visibility = 'visible';
+  };
+
+  const openPopover = (trigger) => {
+    if (activeTrigger === trigger && popover.classList.contains('is-visible')) {
+      closePopover();
+      return;
+    }
+
+    triggers.forEach((button) => button.setAttribute('aria-expanded', 'false'));
+    activeTrigger = trigger;
+    trigger.setAttribute('aria-expanded', 'true');
+    renderPopover(trigger.dataset.helpKey || 'header');
+    positionPopover(trigger);
+    popover.setAttribute('aria-hidden', 'false');
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openPopover(trigger);
+    });
+  });
+
+  popover.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!popover.contains(event.target) && !event.target.closest('.help-trigger')) {
+      closePopover();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closePopover();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (activeTrigger) {
+      positionPopover(activeTrigger);
+    }
+  });
+
+  window.addEventListener('scroll', () => {
+    if (activeTrigger) {
+      positionPopover(activeTrigger);
+    }
+  }, true);
+
+  closePopover();
+});
