@@ -149,6 +149,9 @@
 </div>
 <!-- Fan Toggle -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 relative" id="fanCard">
+<button class="light-settings-trigger fan-settings-trigger absolute top-2 left-2" id="fanSettingsButton" type="button" aria-label="Mở cài đặt hẹn giờ quạt" aria-controls="fanSettingsModal" aria-expanded="false">
+<i class="fa-solid fa-gear"></i>
+</button>
 <button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn quạt" aria-controls="helpPopover" aria-expanded="false" data-help-key="fan">
 <i class="fa-solid fa-circle-question"></i>
 </button>
@@ -170,6 +173,7 @@
 <input class="sr-only toggle-checkbox" id="fanToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
+<p class="light-schedule-notice fan-schedule-notice" id="fanScheduleNotice" aria-live="polite"></p>
 </div>
 <!-- LED RGB Toggle -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue relative" id="rgbLedCard">
@@ -410,6 +414,59 @@ sau >
 <div class="light-settings-modal__actions">
 <button class="light-settings-button light-settings-button--ghost" id="lightSettingsCancel" type="button">Hủy</button>
 <button class="light-settings-button light-settings-button--primary" id="lightSettingsOk" type="button">OK</button>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="light-settings-modal" id="fanSettingsModal" role="dialog" aria-modal="true" aria-labelledby="fanSettingsTitle">
+<div class="light-settings-modal__panel">
+<div class="light-settings-modal__header">
+<h2 id="fanSettingsTitle">Cài đặt quạt</h2>
+<button class="light-settings-modal__close" id="fanSettingsClose" type="button" aria-label="Đóng cài đặt quạt">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<div class="light-settings-modal__body">
+<fieldset class="light-settings-group">
+<legend class="light-settings-legend">
+<span>Hẹn giờ theo mốc</span>
+<button class="light-fixed-add" id="fanFixedAdd" type="button" aria-label="Thêm mốc hẹn giờ quạt">
+<i class="fa-solid fa-plus"></i>
+</button>
+</legend>
+<label class="light-settings-option">
+<input checked="" id="fanScheduleModeFixed" name="fanScheduleMode" type="radio" value="fixed"/>
+<span>Đến giờ đã chọn thì</span>
+</label>
+<div class="light-fixed-list" id="fanFixedList">
+<div class="light-settings-inline light-fixed-row">
+<select id="fanFixedAction" aria-label="Hành động hẹn giờ quạt">
+<option value="off">Tắt quạt</option>
+<option value="on">Bật quạt</option>
+</select>
+<input id="fanFixedTime" type="time" value="14:30" aria-label="Thời gian hẹn giờ quạt"/>
+</div>
+</div>
+</fieldset>
+<fieldset class="light-settings-group">
+<legend>Bật trong khoảng thời gian</legend>
+<label class="light-settings-option">
+<input id="fanScheduleModeDuration" name="fanScheduleMode" type="radio" value="duration"/>
+<span>Bật ngay và tự tắt sau</span>
+</label>
+<div class="light-settings-inline">
+<select id="fanDurationPreset" aria-label="Thời lượng bật quạt">
+<option value="5">5 phút</option>
+<option value="10">10 phút</option>
+<option value="15">15 phút</option>
+<option value="custom">Tùy chọn</option>
+</select>
+<input id="fanDurationCustom" type="number" min="1" max="999" value="5" aria-label="Số phút tùy chọn"/>
+</div>
+</fieldset>
+</div>
+<div class="light-settings-modal__actions">
+<button class="light-settings-button light-settings-button--ghost" id="fanSettingsCancel" type="button">Hủy</button>
+<button class="light-settings-button light-settings-button--primary" id="fanSettingsOk" type="button">OK</button>
 </div>
 </div>
 </div>

@@ -583,6 +583,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const fanToggle = document.getElementById('fanToggle');
   const fanSpeedSlider = document.getElementById('fanSpeedSlider');
   const fanSpeedValue = document.getElementById('fanSpeedValue');
+  const fanSettingsButton = document.getElementById('fanSettingsButton');
+  const fanSettingsModal = document.getElementById('fanSettingsModal');
+  const fanSettingsClose = document.getElementById('fanSettingsClose');
+  const fanSettingsCancel = document.getElementById('fanSettingsCancel');
+  const fanSettingsOk = document.getElementById('fanSettingsOk');
+  const fanScheduleNotice = document.getElementById('fanScheduleNotice');
+  const fanScheduleModeFixed = document.getElementById('fanScheduleModeFixed');
+  const fanScheduleModeDuration = document.getElementById('fanScheduleModeDuration');
+  const fanFixedList = document.getElementById('fanFixedList');
+  const fanFixedAdd = document.getElementById('fanFixedAdd');
+  const fanFixedAction = document.getElementById('fanFixedAction');
+  const fanFixedTime = document.getElementById('fanFixedTime');
+  const fanDurationPreset = document.getElementById('fanDurationPreset');
+  const fanDurationCustom = document.getElementById('fanDurationCustom');
   const buzzerCard = document.getElementById('buzzerCard');
   const buzzerIcon = document.getElementById('buzzerIcon');
   const buzzerStatus = document.getElementById('buzzerStatus');
@@ -705,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('connect', () => {
       isMqttConnected = true;
-      updateMqttStatus('MQTT đã kết nối', '#2a5ea9');
+      updateMqttStatus('MQTT đã kết nối', '#48a92a');
       mqttClient.subscribe([
         mqttConfig.motionTopic,
         mqttConfig.gasTopic,
@@ -1636,6 +1650,239 @@ document.addEventListener('DOMContentLoaded', function() {
     persistControlState({ fanOn: isOn, fanSpeed: Number.parseInt(speed, 10) || 0 });
   };
 
+  let activeFanSchedule = normalizeLightSchedule(storedDashboardState.controls?.fanSchedule);
+  let fanScheduleTimeouts = [];
+  let fanCountdownInterval = null;
+
+  const setFanScheduleNotice = (text = '') => {
+    if (fanScheduleNotice) {
+      fanScheduleNotice.textContent = text;
+    }
+  };
+
+  const persistFanSchedule = (schedule) => {
+    activeFanSchedule = schedule;
+    writeDashboardState({ controls: { fanSchedule: schedule } });
+  };
+
+  const clearFanScheduleTimers = () => {
+    fanScheduleTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    fanScheduleTimeouts = [];
+    if (fanCountdownInterval) {
+      window.clearInterval(fanCountdownInterval);
+      fanCountdownInterval = null;
+    }
+  };
+
+  const completeFanSchedule = () => {
+    persistFanSchedule(null);
+    clearFanScheduleTimers();
+  };
+
+  const applyScheduledFanState = (isOn) => {
+    if (fanToggle && fanToggle.checked !== isOn) {
+      fanToggle.checked = isOn;
+    }
+    updateFanUi(isOn);
+    if (isOn && fanSpeedSlider) {
+      sendFanSpeed(fanSpeedSlider.value);
+    }
+    sendFanState(isOn);
+  };
+
+  const renderActiveFanSchedule = () => {
+    if (!activeFanSchedule) {
+      setFanScheduleNotice('');
+      return;
+    }
+
+    if (activeFanSchedule.mode === 'duration') {
+      const targetMs = Number(activeFanSchedule.targetAt);
+      const remainingMs = targetMs - Date.now();
+      if (!Number.isFinite(targetMs) || remainingMs <= 0) {
+        applyScheduledFanState(false);
+        completeFanSchedule();
+        setFanScheduleNotice('');
+        return;
+      }
+      setFanScheduleNotice(`Sẽ tắt quạt sau ${formatCountdownText(remainingMs)}`);
+      return;
+    }
+
+    if (activeFanSchedule.mode === 'fixed') {
+      const notices = (activeFanSchedule.items || []).map((item) => {
+        const actionText = item.action === 'on' ? 'bật quạt' : 'tắt quạt';
+        return `Sẽ ${actionText} vào ${formatHourMinuteText(item.hour, item.minute)}`;
+      });
+      setFanScheduleNotice(notices.join('; '));
+    }
+  };
+
+  const armFanSchedule = () => {
+    clearFanScheduleTimers();
+    if (!activeFanSchedule) {
+      renderActiveFanSchedule();
+      return;
+    }
+
+    renderActiveFanSchedule();
+
+    if (activeFanSchedule.mode === 'duration') {
+      fanCountdownInterval = window.setInterval(renderActiveFanSchedule, 1000);
+      const remainingMs = Math.max(0, Number(activeFanSchedule.targetAt) - Date.now());
+      const timeoutId = window.setTimeout(() => {
+        applyScheduledFanState(false);
+        completeFanSchedule();
+        setFanScheduleNotice('');
+      }, remainingMs);
+      fanScheduleTimeouts.push(timeoutId);
+      return;
+    }
+
+    if (activeFanSchedule.mode === 'fixed') {
+      const upcomingItems = (activeFanSchedule.items || [])
+        .filter((item) => Number(item.targetAt) > Date.now())
+        .sort((a, b) => Number(a.targetAt) - Number(b.targetAt));
+      if (!upcomingItems.length) {
+        completeFanSchedule();
+        setFanScheduleNotice('');
+        return;
+      }
+      activeFanSchedule.items = upcomingItems;
+      upcomingItems.forEach((item) => {
+        const timeoutId = window.setTimeout(() => {
+          applyScheduledFanState(item.action === 'on');
+          if (!activeFanSchedule || activeFanSchedule.mode !== 'fixed') return;
+          const remainingItems = (activeFanSchedule.items || []).filter((nextItem) => nextItem !== item);
+          persistFanSchedule(remainingItems.length ? { mode: 'fixed', items: remainingItems } : null);
+          armFanSchedule();
+        }, Number(item.targetAt) - Date.now());
+        fanScheduleTimeouts.push(timeoutId);
+      });
+    }
+  };
+
+  const getFanFixedRows = () => Array.from(fanFixedList?.querySelectorAll('.light-fixed-row') || []);
+
+  const createFanFixedRow = (item = {}, canRemove = true) => {
+    const row = document.createElement('div');
+    row.className = 'light-settings-inline light-fixed-row';
+
+    const actionSelect = document.createElement('select');
+    actionSelect.className = 'fan-fixed-action';
+    actionSelect.setAttribute('aria-label', 'Hành động hẹn giờ quạt');
+    actionSelect.innerHTML = '<option value="off">Tắt quạt</option><option value="on">Bật quạt</option>';
+    actionSelect.value = item.action === 'on' ? 'on' : 'off';
+
+    const timeInput = document.createElement('input');
+    timeInput.className = 'fan-fixed-time';
+    timeInput.type = 'time';
+    timeInput.setAttribute('aria-label', 'Thời gian hẹn giờ quạt');
+    timeInput.value = `${String(item.hour ?? 14).padStart(2, '0')}:${String(item.minute ?? 30).padStart(2, '0')}`;
+
+    row.append(actionSelect, timeInput);
+
+    if (canRemove) {
+      const removeButton = document.createElement('button');
+      removeButton.className = 'light-fixed-remove';
+      removeButton.type = 'button';
+      removeButton.setAttribute('aria-label', 'Xóa mốc hẹn giờ quạt');
+      removeButton.innerHTML = '<i class="fa-solid fa-minus"></i>';
+      removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!getFanFixedRows().length && fanFixedList) {
+          fanFixedList.append(createFanFixedRow({ action: 'off', hour: 14, minute: 30 }, false));
+        }
+      });
+      row.append(removeButton);
+    }
+
+    [actionSelect, timeInput].forEach((control) => {
+      control.addEventListener('focus', () => {
+        if (fanScheduleModeFixed) fanScheduleModeFixed.checked = true;
+      });
+      control.addEventListener('change', () => {
+        if (fanScheduleModeFixed) fanScheduleModeFixed.checked = true;
+      });
+    });
+
+    return row;
+  };
+
+  const renderFanFixedRows = (items = []) => {
+    if (!fanFixedList) return;
+    fanFixedList.innerHTML = '';
+    const nextItems = items.length ? items : [{ action: 'off', hour: 14, minute: 30 }];
+    nextItems.forEach((item, index) => {
+      fanFixedList.append(createFanFixedRow(item, index > 0));
+    });
+  };
+
+  const collectFanFixedScheduleItems = () => getFanFixedRows().map((row) => {
+    const action = row.querySelector('select')?.value === 'on' ? 'on' : 'off';
+    const timeValue = row.querySelector('input[type="time"]')?.value || '14:30';
+    const scheduleTime = getFixedScheduleTarget(timeValue);
+    return {
+      action,
+      hour: scheduleTime.hour,
+      minute: scheduleTime.minute,
+      targetAt: scheduleTime.target.getTime(),
+    };
+  }).sort((a, b) => Number(a.targetAt) - Number(b.targetAt));
+
+  const openFanSettings = () => {
+    if (!fanSettingsModal) return;
+    const schedule = activeFanSchedule;
+    if (schedule?.mode === 'duration') {
+      fanScheduleModeDuration.checked = true;
+      fanDurationPreset.value = ['5', '10', '15'].includes(String(schedule.minutes)) ? String(schedule.minutes) : 'custom';
+      fanDurationCustom.value = String(schedule.minutes || 5);
+      renderFanFixedRows();
+    } else {
+      fanScheduleModeFixed.checked = true;
+      renderFanFixedRows(schedule?.mode === 'fixed' ? schedule.items : []);
+    }
+    fanSettingsModal.classList.add('is-visible');
+    fanSettingsModal.setAttribute('aria-hidden', 'false');
+    fanSettingsButton?.setAttribute('aria-expanded', 'true');
+    fanSettingsOk?.focus();
+  };
+
+  const closeFanSettings = () => {
+    if (!fanSettingsModal) return;
+    fanSettingsModal.classList.remove('is-visible');
+    fanSettingsModal.setAttribute('aria-hidden', 'true');
+    fanSettingsButton?.setAttribute('aria-expanded', 'false');
+  };
+
+  const saveFanSettings = () => {
+    const mode = fanScheduleModeDuration?.checked ? 'duration' : 'fixed';
+
+    if (mode === 'duration') {
+      const presetValue = fanDurationPreset?.value || '5';
+      const minutes = presetValue === 'custom'
+        ? Number.parseInt(fanDurationCustom?.value, 10)
+        : Number.parseInt(presetValue, 10);
+      const safeMinutes = Math.min(999, Math.max(1, Number.isFinite(minutes) ? minutes : 5));
+      applyScheduledFanState(true);
+      persistFanSchedule({
+        mode: 'duration',
+        minutes: safeMinutes,
+        targetAt: Date.now() + safeMinutes * 60000,
+      });
+      armFanSchedule();
+      closeFanSettings();
+      return;
+    }
+
+    persistFanSchedule({
+      mode: 'fixed',
+      items: collectFanFixedScheduleItems(),
+    });
+    armFanSchedule();
+    closeFanSettings();
+  };
+
   const updateBuzzerUi = (isOn) => {
     if (!buzzerCard || !buzzerIcon || !buzzerStatus) return;
 
@@ -1747,6 +1994,56 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  if (fanSettingsButton && fanSettingsModal && fanSettingsOk) {
+    fanSettingsButton.addEventListener('click', openFanSettings);
+    fanFixedAdd?.addEventListener('click', () => {
+      if (fanScheduleModeFixed) fanScheduleModeFixed.checked = true;
+      fanFixedList?.append(createFanFixedRow({ action: 'off', hour: 14, minute: 30 }, true));
+    });
+    fanSettingsClose?.addEventListener('click', closeFanSettings);
+    fanSettingsCancel?.addEventListener('click', closeFanSettings);
+    fanSettingsOk.addEventListener('click', saveFanSettings);
+    fanSettingsModal.addEventListener('click', (event) => {
+      if (event.target === fanSettingsModal) {
+        closeFanSettings();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && fanSettingsModal.classList.contains('is-visible')) {
+        closeFanSettings();
+      }
+    });
+  }
+
+  [fanFixedAction, fanFixedTime].forEach((control) => {
+    control?.addEventListener('focus', () => {
+      if (fanScheduleModeFixed) fanScheduleModeFixed.checked = true;
+    });
+    control?.addEventListener('change', () => {
+      if (fanScheduleModeFixed) fanScheduleModeFixed.checked = true;
+    });
+  });
+
+  [fanDurationPreset, fanDurationCustom].forEach((control) => {
+    control?.addEventListener('focus', () => {
+      if (fanScheduleModeDuration) fanScheduleModeDuration.checked = true;
+    });
+    control?.addEventListener('change', () => {
+      if (fanScheduleModeDuration) fanScheduleModeDuration.checked = true;
+    });
+  });
+
+  if (fanDurationPreset && fanDurationCustom) {
+    const syncFanDurationCustomState = () => {
+      fanDurationCustom.disabled = fanDurationPreset.value !== 'custom';
+      fanDurationCustom.classList.toggle('opacity-50', fanDurationCustom.disabled);
+    };
+    fanDurationPreset.addEventListener('change', syncFanDurationCustomState);
+    syncFanDurationCustomState();
+  }
+
+  armFanSchedule();
 
   if (buzzerToggle) {
     updateBuzzerUi(buzzerToggle.checked);
