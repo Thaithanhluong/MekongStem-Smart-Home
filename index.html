@@ -19,9 +19,12 @@
 <body class="font-sans text-slate-800 bg-[#f6f9fe]">
 <div class="flex h-screen overflow-hidden">
 <!-- BEGIN: Sidebar -->
-<aside class="w-64 sidebar-gradient border-r border-[#dbe6f5] flex flex-col h-full shrink-0" data-purpose="navigation-sidebar">
-<div class="p-6">
+<aside class="w-64 sidebar-gradient border-r border-[#dbe6f5] flex flex-col h-full shrink-0" data-purpose="navigation-sidebar" id="navigationSidebar">
+<div class="p-6 flex items-center justify-between gap-3">
 <img alt="MEKONG STEM Logo" class="h-16 w-auto object-contain" src="logo.png"/>
+<button class="sidebar-close" id="sidebarClose" type="button" aria-label="Đóng menu">
+<i class="fa-solid fa-xmark"></i>
+</button>
 </div>
 <nav class="flex-1 px-4 space-y-1 overflow-y-auto">
 <a class="flex items-center gap-3 px-4 py-3 bg-mekong-blue text-white rounded-lg font-medium" href="#">
@@ -83,12 +86,16 @@
 </div>
 </div>
 </aside>
+<button class="sidebar-overlay" id="sidebarOverlay" type="button" aria-label="Đóng menu"></button>
 <!-- END: Sidebar -->
 <!-- BEGIN: Main Content Area -->
 <main class="flex-1 flex flex-col overflow-y-auto bg-[#f6f9fe] relative">
 <!-- Header -->
 <header class="sticky top-0 z-10 bg-[#f6f9fe]/85 backdrop-blur-md px-8 py-6 flex justify-between items-center border-b border-[#dbe6f5]" data-purpose="main-header">
 <div class="flex items-center gap-3">
+<button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Mở menu">
+<i class="fa-solid fa-bars"></i>
+</button>
 <img alt="MEKONG STEM Logo" class="h-12 w-auto object-contain" src="logo.png"/>
 <h1 class="text-3xl font-bold text-mekong-blue">MEKONG STEM <span class="text-mekong-brown">SMART HOME</span></h1>
 </div>

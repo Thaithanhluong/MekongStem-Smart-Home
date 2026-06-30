@@ -1693,3 +1693,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
   closePopover();
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('navigationSidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarClose = document.getElementById('sidebarClose');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  if (!sidebar || !sidebarToggle || !sidebarClose || !sidebarOverlay) return;
+
+  const setSidebarOpen = (isOpen) => {
+    document.body.classList.toggle('sidebar-open', isOpen);
+    sidebarToggle.setAttribute('aria-expanded', String(isOpen));
+    sidebar.setAttribute('aria-hidden', String(!isOpen && window.innerWidth < 1024));
+  };
+
+  sidebarToggle.setAttribute('aria-controls', 'navigationSidebar');
+  sidebarToggle.setAttribute('aria-expanded', 'false');
+  setSidebarOpen(false);
+
+  sidebarToggle.addEventListener('click', () => setSidebarOpen(true));
+  sidebarClose.addEventListener('click', () => setSidebarOpen(false));
+  sidebarOverlay.addEventListener('click', () => setSidebarOpen(false));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setSidebarOpen(false);
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1024) {
+      document.body.classList.remove('sidebar-open');
+      sidebar.removeAttribute('aria-hidden');
+      sidebarToggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    setSidebarOpen(document.body.classList.contains('sidebar-open'));
+  });
+});
