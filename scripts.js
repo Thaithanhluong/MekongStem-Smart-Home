@@ -18,8 +18,6 @@ window.tailwind.config = {
 
 const TEMPERATURE_HISTORY_URLS = [
   window.__TEMPERATURE_HISTORY_URL__,
-  '/api/dashboard/temperature-history',
-  '/api/temperature/history',
 ].filter(Boolean);
 
 const TEMP_GRANULARITY_META = {
@@ -431,10 +429,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const setLoadingState = (isLoading) => {
     chartState.loading = isLoading;
     if (isLoading) {
-      subtitle.textContent = 'Đang tải dữ liệu nhiệt độ từ server...';
+      subtitle.textContent = TEMPERATURE_HISTORY_URLS.length
+        ? 'Đang tải dữ liệu nhiệt độ từ server...'
+        : 'Đang hiển thị dữ liệu nhiệt độ đã lưu.';
     }
   };
   const resolveTemperatureHistory = async (date, granularity) => {
+    if (!TEMPERATURE_HISTORY_URLS.length) {
+      throw new Error('Temperature history endpoint is not configured');
+    }
+
     const queryDate = formatLocalDateKey(date);
     let lastError = null;
 
@@ -465,8 +469,18 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   const loadTemperatureChart = async () => {
     chartState.granularity = granularitySelect.value || 'minute';
-    setLoadingState(true);
     updateNavigationState();
+
+    if (!TEMPERATURE_HISTORY_URLS.length) {
+      chartState.error = chartState.series.length
+        ? ''
+        : 'Chưa có dữ liệu nhiệt độ đã lưu.';
+      renderTemperatureChart();
+      persistChartState();
+      return;
+    }
+
+    setLoadingState(true);
 
     try {
       const series = await resolveTemperatureHistory(chartState.selectedDate, chartState.granularity);
@@ -623,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
     lightStateTopic: 'mekongstem/smart-home/light',
     autoLightTopic: 'mekongstem/smart-home/auto-light',
   };
-  const dashboardStateUrl = window.__DASHBOARD_STATE_URL__ || '/api/dashboard/state';
+  const dashboardStateUrl = window.__DASHBOARD_STATE_URL__ || '';
   let mqttClient = null;
   let isMqttConnected = false;
   let pendingMqttMessages = [];
@@ -830,6 +844,37 @@ document.addEventListener('DOMContentLoaded', function() {
     `).join('');
 
     persistAlertsState();
+  };
+
+  const setRgbColor = (button, shouldPublish = true) => {
+    const color = button.dataset.color || '#2a5ea9';
+    const name = button.dataset.name || 'Tùy chọn';
+
+    colorButtons.forEach((item) => {
+      item.classList.remove('is-selected');
+      item.setAttribute('aria-checked', 'false');
+      item.setAttribute('role', 'radio');
+    });
+
+    button.classList.add('is-selected');
+    button.setAttribute('aria-checked', 'true');
+    rgbIcon.style.backgroundColor = color;
+    rgbCard.style.borderBottomColor = color;
+
+    if (!rgbToggle || rgbToggle.checked) {
+      rgbStatus.textContent = name;
+      rgbStatus.style.color = color;
+      if (shouldPublish) {
+        sendRgbColor(color);
+        sendRgbState(true);
+      }
+    }
+
+    persistControlState({
+      rgbOn: rgbToggle ? rgbToggle.checked : true,
+      rgbColor: color,
+      rgbColorName: name,
+    });
   };
 
   const setRgbColorByValue = (color, shouldPublish = true) => {
@@ -1127,6 +1172,8 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const loadDashboardStateFromServer = async () => {
+    if (!dashboardStateUrl) return;
+
     try {
       const response = await fetch(`${dashboardStateUrl}${dashboardStateUrl.includes('?') ? '&' : '?'}ts=${Date.now()}`, {
         cache: 'no-store',
@@ -1354,7 +1401,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   if (mainDoorToggle) {
-    updateMainDoorUi(false);
     mainDoorToggle.addEventListener('click', () => {
       const nextState = mainDoorToggle.getAttribute('aria-pressed') !== 'true';
       updateMainDoorUi(nextState);
@@ -1369,37 +1415,6 @@ document.addEventListener('DOMContentLoaded', function() {
       sendAutoDoorState(autoDoorToggle.checked);
     });
   }
-
-  const setRgbColor = (button, shouldPublish = true) => {
-    const color = button.dataset.color || '#2a5ea9';
-    const name = button.dataset.name || 'Tùy chọn';
-
-    colorButtons.forEach((item) => {
-      item.classList.remove('is-selected');
-      item.setAttribute('aria-checked', 'false');
-      item.setAttribute('role', 'radio');
-    });
-
-    button.classList.add('is-selected');
-    button.setAttribute('aria-checked', 'true');
-    rgbIcon.style.backgroundColor = color;
-    rgbCard.style.borderBottomColor = color;
-
-    if (!rgbToggle || rgbToggle.checked) {
-      rgbStatus.textContent = name;
-      rgbStatus.style.color = color;
-      if (shouldPublish) {
-        sendRgbColor(color);
-        sendRgbState(true);
-      }
-    }
-
-    persistControlState({
-      rgbOn: rgbToggle ? rgbToggle.checked : true,
-      rgbColor: color,
-      rgbColorName: name,
-    });
-  };
 
   colorButtons.forEach((button) => {
     button.setAttribute('role', 'radio');
