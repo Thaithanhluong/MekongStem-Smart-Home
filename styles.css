@@ -191,7 +191,7 @@
     }
 
     .light-settings-modal__panel {
-      width: min(92vw, 25rem);
+      width: min(94vw, 34rem);
       border-radius: 1rem;
       border: 1px solid #dbe6f5;
       background: #ffffff;
@@ -256,6 +256,33 @@
       font-weight: 800;
     }
 
+    .light-settings-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      width: calc(100% - 0.6rem);
+    }
+
+    .light-fixed-add {
+      width: 1.65rem;
+      height: 1.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dbe6f5;
+      border-radius: 9999px;
+      background: #f6f9fe;
+      color: #2a5ea9;
+      cursor: pointer;
+    }
+
+    .light-fixed-add:hover,
+    .light-fixed-add:focus-visible {
+      background: #edf4fc;
+      outline: none;
+    }
+
     .light-settings-option {
       display: flex;
       align-items: center;
@@ -271,14 +298,50 @@
 
     .light-settings-inline {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 7rem;
+      grid-template-columns: minmax(0, 1fr) 9rem;
       gap: 0.55rem;
       margin-top: 0.7rem;
+    }
+
+    .light-fixed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .light-fixed-row {
+      grid-template-columns: minmax(0, 1fr) 9rem 2.1rem;
+      align-items: center;
+    }
+
+    .light-fixed-row:first-child {
+      grid-template-columns: minmax(0, 1fr) 9rem;
+    }
+
+    .light-fixed-remove {
+      width: 2.1rem;
+      height: 2.1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dbe6f5;
+      border-radius: 0.65rem;
+      background: #ffffff;
+      color: #5d6775;
+      cursor: pointer;
+    }
+
+    .light-fixed-remove:hover,
+    .light-fixed-remove:focus-visible {
+      background: #f6f9fe;
+      color: #2a5ea9;
+      outline: none;
     }
 
     .light-settings-inline select,
     .light-settings-inline input {
       min-width: 0;
+      width: 100%;
       border: 1px solid #dbe6f5;
       border-radius: 0.65rem;
       color: #24324a;

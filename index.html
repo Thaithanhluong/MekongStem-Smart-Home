@@ -370,17 +370,24 @@ sau >
 </div>
 <div class="light-settings-modal__body">
 <fieldset class="light-settings-group">
-<legend>Hẹn giờ theo mốc</legend>
+<legend class="light-settings-legend">
+<span>Hẹn giờ theo mốc</span>
+<button class="light-fixed-add" id="lightFixedAdd" type="button" aria-label="Thêm mốc hẹn giờ">
+<i class="fa-solid fa-plus"></i>
+</button>
+</legend>
 <label class="light-settings-option">
 <input checked="" id="lightScheduleModeFixed" name="lightScheduleMode" type="radio" value="fixed"/>
 <span>Đến giờ đã chọn thì</span>
 </label>
-<div class="light-settings-inline">
+<div class="light-fixed-list" id="lightFixedList">
+<div class="light-settings-inline light-fixed-row">
 <select id="lightFixedAction" aria-label="Hành động hẹn giờ">
 <option value="off">Tắt đèn</option>
 <option value="on">Bật đèn</option>
 </select>
 <input id="lightFixedTime" type="time" value="14:30" aria-label="Thời gian hẹn giờ"/>
+</div>
 </div>
 </fieldset>
 <fieldset class="light-settings-group">

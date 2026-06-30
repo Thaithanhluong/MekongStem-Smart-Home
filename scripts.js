@@ -610,6 +610,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const lightScheduleNotice = document.getElementById('lightScheduleNotice');
   const lightScheduleModeFixed = document.getElementById('lightScheduleModeFixed');
   const lightScheduleModeDuration = document.getElementById('lightScheduleModeDuration');
+  const lightFixedList = document.getElementById('lightFixedList');
+  const lightFixedAdd = document.getElementById('lightFixedAdd');
   const lightFixedAction = document.getElementById('lightFixedAction');
   const lightFixedTime = document.getElementById('lightFixedTime');
   const lightDurationPreset = document.getElementById('lightDurationPreset');
@@ -805,19 +807,6 @@ document.addEventListener('DOMContentLoaded', function() {
     publishMqttMessage(mqttConfig.autoLightTopic, isOn ? 'ON' : 'OFF');
   };
 
-  let activeLightSchedule = storedDashboardState.controls?.lightSchedule || null;
-  let lightScheduleTimeout = null;
-  let lightCountdownInterval = null;
-
-  const formatHourMinuteText = (hour, minute) => `${Number(hour)} giờ ${Number(minute)} phút`;
-
-  const formatCountdownText = (remainingMs) => {
-    const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
-  };
-
   const getFixedScheduleTarget = (timeValue) => {
     const [hourText, minuteText] = String(timeValue || '14:30').split(':');
     const hour = Math.min(23, Math.max(0, Number.parseInt(hourText, 10) || 0));
@@ -828,6 +817,51 @@ document.addEventListener('DOMContentLoaded', function() {
       target.setDate(target.getDate() + 1);
     }
     return { target, hour, minute };
+  };
+
+  const normalizeLightSchedule = (schedule) => {
+    if (!schedule || typeof schedule !== 'object') return null;
+    if (schedule.mode === 'duration') return schedule;
+    if (schedule.mode !== 'fixed') return null;
+
+    const sourceItems = Array.isArray(schedule.items)
+      ? schedule.items
+      : [{
+        action: schedule.action,
+        hour: schedule.hour,
+        minute: schedule.minute,
+        targetAt: schedule.targetAt,
+      }];
+
+    const items = sourceItems
+      .map((item) => {
+        const hour = Math.min(23, Math.max(0, Number.parseInt(item?.hour, 10) || 0));
+        const minute = Math.min(59, Math.max(0, Number.parseInt(item?.minute, 10) || 0));
+        const targetAt = Number(item?.targetAt);
+        return {
+          action: item?.action === 'on' ? 'on' : 'off',
+          hour,
+          minute,
+          targetAt: Number.isFinite(targetAt) ? targetAt : getFixedScheduleTarget(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`).target.getTime(),
+        };
+      })
+      .filter((item) => Number(item.targetAt) > Date.now())
+      .sort((a, b) => Number(a.targetAt) - Number(b.targetAt));
+
+    return items.length ? { mode: 'fixed', items } : null;
+  };
+
+  let activeLightSchedule = normalizeLightSchedule(storedDashboardState.controls?.lightSchedule);
+  let lightScheduleTimeouts = [];
+  let lightCountdownInterval = null;
+
+  const formatHourMinuteText = (hour, minute) => `${Number(hour)} giờ ${Number(minute)} phút`;
+
+  const formatCountdownText = (remainingMs) => {
+    const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
   };
 
   const setLightScheduleNotice = (text = '') => {
@@ -842,10 +876,8 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const clearLightScheduleTimers = () => {
-    if (lightScheduleTimeout) {
-      window.clearTimeout(lightScheduleTimeout);
-      lightScheduleTimeout = null;
-    }
+    lightScheduleTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    lightScheduleTimeouts = [];
     if (lightCountdownInterval) {
       window.clearInterval(lightCountdownInterval);
       lightCountdownInterval = null;
@@ -882,8 +914,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (activeLightSchedule.mode === 'fixed') {
-      const actionText = activeLightSchedule.action === 'on' ? 'bật đèn' : 'tắt đèn';
-      setLightScheduleNotice(`Sẽ ${actionText} vào ${formatHourMinuteText(activeLightSchedule.hour, activeLightSchedule.minute)}`);
+      const notices = (activeLightSchedule.items || []).map((item) => {
+        const actionText = item.action === 'on' ? 'bật đèn' : 'tắt đèn';
+        return `Sẽ ${actionText} vào ${formatHourMinuteText(item.hour, item.minute)}`;
+      });
+      setLightScheduleNotice(notices.join('; '));
     }
   };
 
@@ -899,29 +934,105 @@ document.addEventListener('DOMContentLoaded', function() {
     if (activeLightSchedule.mode === 'duration') {
       lightCountdownInterval = window.setInterval(renderActiveLightSchedule, 1000);
       const remainingMs = Math.max(0, Number(activeLightSchedule.targetAt) - Date.now());
-      lightScheduleTimeout = window.setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         applyScheduledLightState(false);
         completeLightSchedule();
         setLightScheduleNotice('');
       }, remainingMs);
+      lightScheduleTimeouts.push(timeoutId);
       return;
     }
 
     if (activeLightSchedule.mode === 'fixed') {
-      const targetMs = Number(activeLightSchedule.targetAt);
-      const remainingMs = targetMs - Date.now();
-      if (!Number.isFinite(targetMs) || remainingMs <= 0) {
+      const upcomingItems = (activeLightSchedule.items || [])
+        .filter((item) => Number(item.targetAt) > Date.now())
+        .sort((a, b) => Number(a.targetAt) - Number(b.targetAt));
+      if (!upcomingItems.length) {
         completeLightSchedule();
         setLightScheduleNotice('');
         return;
       }
-      lightScheduleTimeout = window.setTimeout(() => {
-        applyScheduledLightState(activeLightSchedule.action === 'on');
-        completeLightSchedule();
-        setLightScheduleNotice('');
-      }, remainingMs);
+      activeLightSchedule.items = upcomingItems;
+      upcomingItems.forEach((item) => {
+        const timeoutId = window.setTimeout(() => {
+          applyScheduledLightState(item.action === 'on');
+          if (!activeLightSchedule || activeLightSchedule.mode !== 'fixed') return;
+          const remainingItems = (activeLightSchedule.items || []).filter((nextItem) => nextItem !== item);
+          persistLightSchedule(remainingItems.length ? { mode: 'fixed', items: remainingItems } : null);
+          armLightSchedule();
+        }, Number(item.targetAt) - Date.now());
+        lightScheduleTimeouts.push(timeoutId);
+      });
     }
   };
+
+  const getFixedRows = () => Array.from(lightFixedList?.querySelectorAll('.light-fixed-row') || []);
+
+  const createFixedRow = (item = {}, canRemove = true) => {
+    const row = document.createElement('div');
+    row.className = 'light-settings-inline light-fixed-row';
+
+    const actionSelect = document.createElement('select');
+    actionSelect.className = 'light-fixed-action';
+    actionSelect.setAttribute('aria-label', 'Hành động hẹn giờ');
+    actionSelect.innerHTML = '<option value="off">Tắt đèn</option><option value="on">Bật đèn</option>';
+    actionSelect.value = item.action === 'on' ? 'on' : 'off';
+
+    const timeInput = document.createElement('input');
+    timeInput.className = 'light-fixed-time';
+    timeInput.type = 'time';
+    timeInput.setAttribute('aria-label', 'Thời gian hẹn giờ');
+    timeInput.value = `${String(item.hour ?? 14).padStart(2, '0')}:${String(item.minute ?? 30).padStart(2, '0')}`;
+
+    row.append(actionSelect, timeInput);
+
+    if (canRemove) {
+      const removeButton = document.createElement('button');
+      removeButton.className = 'light-fixed-remove';
+      removeButton.type = 'button';
+      removeButton.setAttribute('aria-label', 'Xóa mốc hẹn giờ');
+      removeButton.innerHTML = '<i class="fa-solid fa-minus"></i>';
+      removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!getFixedRows().length && lightFixedList) {
+          lightFixedList.append(createFixedRow({ action: 'off', hour: 14, minute: 30 }, false));
+        }
+      });
+      row.append(removeButton);
+    }
+
+    [actionSelect, timeInput].forEach((control) => {
+      control.addEventListener('focus', () => {
+        if (lightScheduleModeFixed) lightScheduleModeFixed.checked = true;
+      });
+      control.addEventListener('change', () => {
+        if (lightScheduleModeFixed) lightScheduleModeFixed.checked = true;
+      });
+    });
+
+    return row;
+  };
+
+  const renderFixedRows = (items = []) => {
+    if (!lightFixedList) return;
+    lightFixedList.innerHTML = '';
+    const nextItems = items.length ? items : [{ action: 'off', hour: 14, minute: 30 }];
+    nextItems.forEach((item, index) => {
+      lightFixedList.append(createFixedRow(item, index > 0));
+    });
+  };
+
+  const collectFixedScheduleItems = () => getFixedRows().map((row) => {
+    const action = row.querySelector('select')?.value === 'on' ? 'on' : 'off';
+    const timeValue = row.querySelector('input[type="time"]')?.value || '14:30';
+    const scheduleTime = getFixedScheduleTarget(timeValue);
+    return {
+      action,
+      hour: scheduleTime.hour,
+      minute: scheduleTime.minute,
+      targetAt: scheduleTime.target.getTime(),
+    };
+  }).sort((a, b) => Number(a.targetAt) - Number(b.targetAt));
 
   const openLightSettings = () => {
     if (!lightSettingsModal) return;
@@ -930,12 +1041,10 @@ document.addEventListener('DOMContentLoaded', function() {
       lightScheduleModeDuration.checked = true;
       lightDurationPreset.value = ['5', '10', '15'].includes(String(schedule.minutes)) ? String(schedule.minutes) : 'custom';
       lightDurationCustom.value = String(schedule.minutes || 5);
+      renderFixedRows();
     } else {
       lightScheduleModeFixed.checked = true;
-      if (schedule?.mode === 'fixed') {
-        lightFixedAction.value = schedule.action || 'off';
-        lightFixedTime.value = `${String(schedule.hour ?? 14).padStart(2, '0')}:${String(schedule.minute ?? 30).padStart(2, '0')}`;
-      }
+      renderFixedRows(schedule?.mode === 'fixed' ? schedule.items : []);
     }
     lightSettingsModal.classList.add('is-visible');
     lightSettingsModal.setAttribute('aria-hidden', 'false');
@@ -970,13 +1079,9 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    const scheduleTime = getFixedScheduleTarget(lightFixedTime?.value || '14:30');
     persistLightSchedule({
       mode: 'fixed',
-      action: lightFixedAction?.value === 'on' ? 'on' : 'off',
-      hour: scheduleTime.hour,
-      minute: scheduleTime.minute,
-      targetAt: scheduleTime.target.getTime(),
+      items: collectFixedScheduleItems(),
     });
     armLightSchedule();
     closeLightSettings();
@@ -1461,6 +1566,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (lightSettingsButton && lightSettingsModal && lightSettingsOk) {
     lightSettingsButton.addEventListener('click', openLightSettings);
+    lightFixedAdd?.addEventListener('click', () => {
+      if (lightScheduleModeFixed) lightScheduleModeFixed.checked = true;
+      lightFixedList?.append(createFixedRow({ action: 'off', hour: 14, minute: 30 }, true));
+    });
     lightSettingsClose?.addEventListener('click', closeLightSettings);
     lightSettingsCancel?.addEventListener('click', closeLightSettings);
     lightSettingsOk.addEventListener('click', saveLightSettings);
