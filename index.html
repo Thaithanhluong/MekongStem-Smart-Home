@@ -18,102 +18,38 @@
 </head>
 <body class="font-sans text-slate-800 bg-[#f6f9fe]">
 <div class="flex h-screen overflow-hidden">
-<!-- BEGIN: Sidebar -->
-<aside class="w-64 sidebar-gradient border-r border-[#dbe6f5] flex flex-col h-full shrink-0" data-purpose="navigation-sidebar" id="navigationSidebar">
-<div class="p-6 flex items-center justify-between gap-3">
-<img alt="MEKONG STEM Logo" class="h-16 w-auto object-contain" src="logo.png"/>
-<button class="sidebar-close" id="sidebarClose" type="button" aria-label="Đóng menu">
-<i class="fa-solid fa-xmark"></i>
-</button>
-<button class="sidebar-collapse-toggle" id="sidebarCollapseToggle" type="button" aria-label="Thu gọn menu" title="Thu gọn menu">
-<i class="fa-solid fa-angle-left"></i>
-</button>
-</div>
-<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
-<a class="flex items-center gap-3 px-4 py-3 bg-mekong-blue text-white rounded-lg font-medium" href="#">
-<i class="fa-solid fa-house"></i>
-<span>Tổng quan</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-microchip"></i>
-<span>Thiết bị</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-door-open"></i>
-<span>Phòng</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-robot"></i>
-<span>Tự động hóa</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-bell"></i>
-<span>Cảnh báo</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-clock-rotate-left"></i>
-<span>Lịch sử</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-mekong-blue hover:bg-mekong-light-blue rounded-lg font-medium transition-colors" href="#">
-<i class="fa-solid fa-gear"></i>
-<span>Cài đặt</span>
-</a>
-</nav>
-<div class="p-4 space-y-4">
-<!-- User Profile -->
-<div class="bg-white border border-[#dbe6f5] rounded-xl p-3 flex items-center gap-3 card-shadow cursor-pointer">
-<div class="w-10 h-10 rounded-full bg-mekong-blue flex items-center justify-center text-white">
-<i class="fa-solid fa-user"></i>
-</div>
-<div class="flex-1 min-w-0">
-<p class="text-sm font-bold truncate">Admin</p>
-<p class="text-xs text-mekong-gray truncate">admin@mekongstem.vn</p>
-</div>
-<i class="fa-solid fa-chevron-down text-xs text-mekong-gray"></i>
-</div>
-<!-- Connection Status -->
-<div class="bg-[#f6f9fe] border border-[#dbe6f5] rounded-xl p-2 flex items-center gap-2">
-<i class="fa-solid fa-wifi text-mekong-blue text-xs"></i>
-<p class="text-[10px] font-medium">Kết nối: <span class="text-mekong-sky" id="mqttConnectionStatus">Đang kết nối...</span></p>
-</div>
-<!-- App Branding Footer -->
-<div class="text-white pt-2">
-<h3 class="text-sm font-bold">MEKONG STEM SMART HOME</h3>
-<p class="text-xs opacity-80">V1.0.0</p>
-<div class="mt-2 w-full h-8 opacity-40">
-<!-- Simplified decoration line -->
-<svg height="100%" preserveaspectratio="none" viewbox="0 0 100 20" width="100%">
-<path d="M0,10 L40,10 L50,5 L70,5 L80,10 L100,10" fill="none" stroke="white" stroke-width="1"></path>
-</svg>
-</div>
-</div>
-</div>
-</aside>
-<button class="sidebar-overlay" id="sidebarOverlay" type="button" aria-label="Đóng menu"></button>
-<!-- END: Sidebar -->
 <!-- BEGIN: Main Content Area -->
 <main class="flex-1 flex flex-col overflow-y-auto bg-[#f6f9fe] relative">
 <!-- Header -->
-<header class="sticky top-0 z-10 bg-[#f6f9fe]/85 backdrop-blur-md px-8 py-6 flex justify-between items-center border-b border-[#dbe6f5]" data-purpose="main-header">
-<div class="flex items-center gap-3">
-<button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Mở menu">
-<i class="fa-solid fa-bars"></i>
-</button>
+<header class="sticky top-0 z-10 bg-[#f6f9fe]/85 backdrop-blur-md px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-[#dbe6f5]" data-purpose="main-header">
+<div class="flex items-center gap-3 min-w-0">
 <img alt="MEKONG STEM Logo" class="h-12 w-auto object-contain" src="logo.png"/>
 <h1 class="text-3xl font-bold text-mekong-blue">MEKONG STEM <span class="text-mekong-brown">SMART HOME</span></h1>
 </div>
-<div class="flex items-center gap-4">
-<div class="relative">
-<div class="absolute -top-1 -right-1 w-4 h-4 bg-mekong-blue text-white text-[10px] flex items-center justify-center rounded-full border-2 border-[#f6f9fe]" id="alertCount">0</div>
-<button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
-<i class="fa-regular fa-bell text-xl"></i>
-</button>
+<nav class="top-navigation" aria-label="Điều hướng chính">
+<a class="is-active" href="#"><i class="fa-solid fa-house"></i><span>Tổng quan</span></a>
+<a href="#"><i class="fa-solid fa-microchip"></i><span>Thiết bị</span></a>
+<a href="#"><i class="fa-solid fa-door-open"></i><span>Phòng</span></a>
+<a href="#"><i class="fa-solid fa-robot"></i><span>Tự động hóa</span></a>
+<a href="#"><i class="fa-solid fa-bell"></i><span>Cảnh báo</span></a>
+<a href="#"><i class="fa-solid fa-clock-rotate-left"></i><span>Lịch sử</span></a>
+</nav>
+<div class="header-actions">
+<div class="header-user">
+<div class="header-user__avatar">
+<i class="fa-solid fa-user"></i>
+</div>
+<div class="min-w-0">
+<p class="header-user__name">Admin</p>
+<p class="header-user__email">admin@mekongstem.vn</p>
+</div>
+</div>
+<div class="header-connection">
+<i class="fa-solid fa-wifi"></i>
+<p>Kết nối: <span id="mqttConnectionStatus">Đang kết nối...</span></p>
 </div>
 <button class="help-trigger" type="button" aria-label="Mở hướng dẫn tổng quan" aria-controls="helpPopover" aria-expanded="false" data-help-key="header">
 <i class="fa-solid fa-circle-question"></i>
-</button>
-<button class="w-10 h-10 flex items-center justify-center text-mekong-blue hover:bg-white rounded-full transition-colors">
-<i class="fa-regular fa-sun text-xl"></i>
 </button>
 </div>
 </header>
