@@ -616,6 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const lightStatus = document.getElementById('lightStatus');
   const gasValue = document.getElementById('gasValue');
   const gasStatus = document.getElementById('gasStatus');
+  const mqttConnectionStatus = document.getElementById('mqttConnectionStatus');
 
   if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
 
@@ -649,6 +650,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const storedDashboardState = readDashboardState();
   let isDashboardHydrating = true;
 
+  const updateMqttStatus = (label, color = '#7ca8ea') => {
+    if (!mqttConnectionStatus) return;
+    mqttConnectionStatus.textContent = label;
+    mqttConnectionStatus.style.color = color;
+  };
+
   const persistControlState = (patch) => {
     if (isDashboardHydrating) return;
     writeDashboardState({ controls: patch });
@@ -665,7 +672,15 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const connectMqtt = () => {
-    if (mqttClient || typeof mqtt === 'undefined') return;
+    if (mqttClient) return;
+
+    if (typeof mqtt === 'undefined') {
+      updateMqttStatus('Không tải được thư viện MQTT', '#b45309');
+      console.warn('MQTT library is not loaded. Check https://unpkg.com/mqtt/dist/mqtt.min.js');
+      return;
+    }
+
+    updateMqttStatus('Đang kết nối MQTT...', '#7ca8ea');
 
     mqttClient = mqtt.connect(mqttConfig.url, {
       clientId: `mekongstem_web_${Math.random().toString(16).slice(2, 10)}`,
@@ -676,6 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('connect', () => {
       isMqttConnected = true;
+      updateMqttStatus('MQTT đã kết nối', '#2a5ea9');
       mqttClient.subscribe([
         mqttConfig.motionTopic,
         mqttConfig.gasTopic,
@@ -692,14 +708,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('reconnect', () => {
       isMqttConnected = false;
+      updateMqttStatus('Đang kết nối lại...', '#b45309');
     });
 
     mqttClient.on('close', () => {
       isMqttConnected = false;
+      updateMqttStatus('MQTT mất kết nối', '#b45309');
     });
 
     mqttClient.on('error', (error) => {
-      console.warn('MQTT RGB LED error:', error.message);
+      updateMqttStatus('Lỗi MQTT', '#b45309');
+      console.warn('MQTT error:', error.message);
     });
 
     mqttClient.on('message', (topic, payload) => {
@@ -731,6 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
       qos: 0,
       retain: false,
     });
+    console.info('MQTT publish:', topic, message);
   };
 
   const sendRgbState = (isOn) => {
