@@ -215,7 +215,8 @@
     }
 
     .sidebar-toggle,
-    .sidebar-close {
+    .sidebar-close,
+    .sidebar-collapse-toggle {
       width: 2.5rem;
       height: 2.5rem;
       display: inline-flex;
@@ -232,7 +233,9 @@
     .sidebar-toggle:hover,
     .sidebar-toggle:focus-visible,
     .sidebar-close:hover,
-    .sidebar-close:focus-visible {
+    .sidebar-close:focus-visible,
+    .sidebar-collapse-toggle:hover,
+    .sidebar-collapse-toggle:focus-visible {
       background: #edf4fc;
       transform: translateY(-1px);
       outline: none;
@@ -250,7 +253,8 @@
 
     [data-purpose="navigation-sidebar"] {
       display: flex !important;
-      transition: transform 180ms ease;
+      width: 16rem;
+      transition: width 180ms ease, transform 180ms ease;
     }
 
     @media (max-width: 1023px) {
@@ -260,6 +264,10 @@
         z-index: 60;
         transform: translateX(-100%);
         box-shadow: 18px 0 34px rgba(15, 23, 42, 0.16);
+      }
+
+      .sidebar-collapse-toggle {
+        display: none !important;
       }
 
       body.sidebar-open [data-purpose="navigation-sidebar"] {
@@ -272,9 +280,41 @@
     }
 
     @media (min-width: 1024px) {
-      .sidebar-toggle,
       .sidebar-close,
       .sidebar-overlay {
+        display: none !important;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] {
+        width: 5.25rem;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] > div:first-child {
+        justify-content: center;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] img {
+        width: 2.6rem;
+        height: 2.6rem;
+        object-fit: contain;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] nav {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] nav a {
+        justify-content: center;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] nav a span,
+      body.sidebar-collapsed [data-purpose="navigation-sidebar"] .p-4,
+      body.sidebar-collapsed .sidebar-collapse-toggle {
         display: none !important;
       }
     }
