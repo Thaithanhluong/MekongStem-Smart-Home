@@ -121,6 +121,9 @@
 <div class="grid grid-cols-3 gap-4">
 <!-- Light Toggle -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center justify-between gap-4 min-h-[12.75rem] border-b-4 border-mekong-blue relative" id="lightControlCard">
+<button class="light-settings-trigger absolute top-2 left-2" id="lightSettingsButton" type="button" aria-label="Mở cài đặt hẹn giờ đèn" aria-controls="lightSettingsModal" aria-expanded="false">
+<i class="fa-solid fa-gear"></i>
+</button>
 <button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn đèn" aria-controls="helpPopover" aria-expanded="false" data-help-key="light">
 <i class="fa-solid fa-circle-question"></i>
 </button>
@@ -142,6 +145,7 @@
 <div class="w-9 h-4 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all"></div>
 </label>
 </div>
+<p class="light-schedule-notice" id="lightScheduleNotice" aria-live="polite"></p>
 </div>
 <!-- Fan Toggle -->
 <div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 relative" id="fanCard">
@@ -355,6 +359,52 @@ sau >
 </footer>
 </main>
 <!-- END: Main Content Area -->
+</div>
+<div aria-hidden="true" class="light-settings-modal" id="lightSettingsModal" role="dialog" aria-modal="true" aria-labelledby="lightSettingsTitle">
+<div class="light-settings-modal__panel">
+<div class="light-settings-modal__header">
+<h2 id="lightSettingsTitle">Cài đặt đèn</h2>
+<button class="light-settings-modal__close" id="lightSettingsClose" type="button" aria-label="Đóng cài đặt đèn">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<div class="light-settings-modal__body">
+<fieldset class="light-settings-group">
+<legend>Hẹn giờ theo mốc</legend>
+<label class="light-settings-option">
+<input checked="" id="lightScheduleModeFixed" name="lightScheduleMode" type="radio" value="fixed"/>
+<span>Đến giờ đã chọn thì</span>
+</label>
+<div class="light-settings-inline">
+<select id="lightFixedAction" aria-label="Hành động hẹn giờ">
+<option value="off">Tắt đèn</option>
+<option value="on">Bật đèn</option>
+</select>
+<input id="lightFixedTime" type="time" value="14:30" aria-label="Thời gian hẹn giờ"/>
+</div>
+</fieldset>
+<fieldset class="light-settings-group">
+<legend>Bật trong khoảng thời gian</legend>
+<label class="light-settings-option">
+<input id="lightScheduleModeDuration" name="lightScheduleMode" type="radio" value="duration"/>
+<span>Bật ngay và tự tắt sau</span>
+</label>
+<div class="light-settings-inline">
+<select id="lightDurationPreset" aria-label="Thời lượng bật đèn">
+<option value="5">5 phút</option>
+<option value="10">10 phút</option>
+<option value="15">15 phút</option>
+<option value="custom">Tùy chọn</option>
+</select>
+<input id="lightDurationCustom" type="number" min="1" max="999" value="5" aria-label="Số phút tùy chọn"/>
+</div>
+</fieldset>
+</div>
+<div class="light-settings-modal__actions">
+<button class="light-settings-button light-settings-button--ghost" id="lightSettingsCancel" type="button">Hủy</button>
+<button class="light-settings-button light-settings-button--primary" id="lightSettingsOk" type="button">OK</button>
+</div>
+</div>
 </div>
 <div aria-hidden="true" class="help-popover" id="helpPopover" role="dialog"></div>
 

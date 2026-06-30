@@ -602,6 +602,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const lightToggle = document.getElementById('lightToggle');
   const favoriteLightToggle = document.getElementById('favoriteLightToggle');
   const autoLightToggle = document.getElementById('autoLightToggle');
+  const lightSettingsButton = document.getElementById('lightSettingsButton');
+  const lightSettingsModal = document.getElementById('lightSettingsModal');
+  const lightSettingsClose = document.getElementById('lightSettingsClose');
+  const lightSettingsCancel = document.getElementById('lightSettingsCancel');
+  const lightSettingsOk = document.getElementById('lightSettingsOk');
+  const lightScheduleNotice = document.getElementById('lightScheduleNotice');
+  const lightScheduleModeFixed = document.getElementById('lightScheduleModeFixed');
+  const lightScheduleModeDuration = document.getElementById('lightScheduleModeDuration');
+  const lightFixedAction = document.getElementById('lightFixedAction');
+  const lightFixedTime = document.getElementById('lightFixedTime');
+  const lightDurationPreset = document.getElementById('lightDurationPreset');
+  const lightDurationCustom = document.getElementById('lightDurationCustom');
   const motionStatusCard = document.getElementById('motionStatusCard');
   const motionStatusIcon = document.getElementById('motionStatusIcon');
   const motionStatusValue = document.getElementById('motionStatusValue');
@@ -791,6 +803,183 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const sendAutoLightState = (isOn) => {
     publishMqttMessage(mqttConfig.autoLightTopic, isOn ? 'ON' : 'OFF');
+  };
+
+  let activeLightSchedule = storedDashboardState.controls?.lightSchedule || null;
+  let lightScheduleTimeout = null;
+  let lightCountdownInterval = null;
+
+  const formatHourMinuteText = (hour, minute) => `${Number(hour)} giờ ${Number(minute)} phút`;
+
+  const formatCountdownText = (remainingMs) => {
+    const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  const getFixedScheduleTarget = (timeValue) => {
+    const [hourText, minuteText] = String(timeValue || '14:30').split(':');
+    const hour = Math.min(23, Math.max(0, Number.parseInt(hourText, 10) || 0));
+    const minute = Math.min(59, Math.max(0, Number.parseInt(minuteText, 10) || 0));
+    const target = new Date();
+    target.setHours(hour, minute, 0, 0);
+    if (target.getTime() <= Date.now()) {
+      target.setDate(target.getDate() + 1);
+    }
+    return { target, hour, minute };
+  };
+
+  const setLightScheduleNotice = (text = '') => {
+    if (lightScheduleNotice) {
+      lightScheduleNotice.textContent = text;
+    }
+  };
+
+  const persistLightSchedule = (schedule) => {
+    activeLightSchedule = schedule;
+    writeDashboardState({ controls: { lightSchedule: schedule } });
+  };
+
+  const clearLightScheduleTimers = () => {
+    if (lightScheduleTimeout) {
+      window.clearTimeout(lightScheduleTimeout);
+      lightScheduleTimeout = null;
+    }
+    if (lightCountdownInterval) {
+      window.clearInterval(lightCountdownInterval);
+      lightCountdownInterval = null;
+    }
+  };
+
+  const completeLightSchedule = () => {
+    persistLightSchedule(null);
+    clearLightScheduleTimers();
+  };
+
+  const applyScheduledLightState = (isOn) => {
+    updateLightControlUi(isOn);
+    sendLightState(isOn);
+  };
+
+  const renderActiveLightSchedule = () => {
+    if (!activeLightSchedule) {
+      setLightScheduleNotice('');
+      return;
+    }
+
+    if (activeLightSchedule.mode === 'duration') {
+      const targetMs = Number(activeLightSchedule.targetAt);
+      const remainingMs = targetMs - Date.now();
+      if (!Number.isFinite(targetMs) || remainingMs <= 0) {
+        applyScheduledLightState(false);
+        completeLightSchedule();
+        setLightScheduleNotice('');
+        return;
+      }
+      setLightScheduleNotice(`Sẽ tắt đèn sau ${formatCountdownText(remainingMs)}`);
+      return;
+    }
+
+    if (activeLightSchedule.mode === 'fixed') {
+      const actionText = activeLightSchedule.action === 'on' ? 'bật đèn' : 'tắt đèn';
+      setLightScheduleNotice(`Sẽ ${actionText} vào ${formatHourMinuteText(activeLightSchedule.hour, activeLightSchedule.minute)}`);
+    }
+  };
+
+  const armLightSchedule = () => {
+    clearLightScheduleTimers();
+    if (!activeLightSchedule) {
+      renderActiveLightSchedule();
+      return;
+    }
+
+    renderActiveLightSchedule();
+
+    if (activeLightSchedule.mode === 'duration') {
+      lightCountdownInterval = window.setInterval(renderActiveLightSchedule, 1000);
+      const remainingMs = Math.max(0, Number(activeLightSchedule.targetAt) - Date.now());
+      lightScheduleTimeout = window.setTimeout(() => {
+        applyScheduledLightState(false);
+        completeLightSchedule();
+        setLightScheduleNotice('');
+      }, remainingMs);
+      return;
+    }
+
+    if (activeLightSchedule.mode === 'fixed') {
+      const targetMs = Number(activeLightSchedule.targetAt);
+      const remainingMs = targetMs - Date.now();
+      if (!Number.isFinite(targetMs) || remainingMs <= 0) {
+        completeLightSchedule();
+        setLightScheduleNotice('');
+        return;
+      }
+      lightScheduleTimeout = window.setTimeout(() => {
+        applyScheduledLightState(activeLightSchedule.action === 'on');
+        completeLightSchedule();
+        setLightScheduleNotice('');
+      }, remainingMs);
+    }
+  };
+
+  const openLightSettings = () => {
+    if (!lightSettingsModal) return;
+    const schedule = activeLightSchedule;
+    if (schedule?.mode === 'duration') {
+      lightScheduleModeDuration.checked = true;
+      lightDurationPreset.value = ['5', '10', '15'].includes(String(schedule.minutes)) ? String(schedule.minutes) : 'custom';
+      lightDurationCustom.value = String(schedule.minutes || 5);
+    } else {
+      lightScheduleModeFixed.checked = true;
+      if (schedule?.mode === 'fixed') {
+        lightFixedAction.value = schedule.action || 'off';
+        lightFixedTime.value = `${String(schedule.hour ?? 14).padStart(2, '0')}:${String(schedule.minute ?? 30).padStart(2, '0')}`;
+      }
+    }
+    lightSettingsModal.classList.add('is-visible');
+    lightSettingsModal.setAttribute('aria-hidden', 'false');
+    lightSettingsButton?.setAttribute('aria-expanded', 'true');
+    lightSettingsOk?.focus();
+  };
+
+  const closeLightSettings = () => {
+    if (!lightSettingsModal) return;
+    lightSettingsModal.classList.remove('is-visible');
+    lightSettingsModal.setAttribute('aria-hidden', 'true');
+    lightSettingsButton?.setAttribute('aria-expanded', 'false');
+  };
+
+  const saveLightSettings = () => {
+    const mode = lightScheduleModeDuration?.checked ? 'duration' : 'fixed';
+
+    if (mode === 'duration') {
+      const presetValue = lightDurationPreset?.value || '5';
+      const minutes = presetValue === 'custom'
+        ? Number.parseInt(lightDurationCustom?.value, 10)
+        : Number.parseInt(presetValue, 10);
+      const safeMinutes = Math.min(999, Math.max(1, Number.isFinite(minutes) ? minutes : 5));
+      applyScheduledLightState(true);
+      persistLightSchedule({
+        mode: 'duration',
+        minutes: safeMinutes,
+        targetAt: Date.now() + safeMinutes * 60000,
+      });
+      armLightSchedule();
+      closeLightSettings();
+      return;
+    }
+
+    const scheduleTime = getFixedScheduleTarget(lightFixedTime?.value || '14:30');
+    persistLightSchedule({
+      mode: 'fixed',
+      action: lightFixedAction?.value === 'on' ? 'on' : 'off',
+      hour: scheduleTime.hour,
+      minute: scheduleTime.minute,
+      targetAt: scheduleTime.target.getTime(),
+    });
+    armLightSchedule();
+    closeLightSettings();
   };
 
   connectMqtt();
@@ -1269,6 +1458,52 @@ document.addEventListener('DOMContentLoaded', function() {
       sendAutoLightState(autoLightToggle.checked);
     });
   }
+
+  if (lightSettingsButton && lightSettingsModal && lightSettingsOk) {
+    lightSettingsButton.addEventListener('click', openLightSettings);
+    lightSettingsClose?.addEventListener('click', closeLightSettings);
+    lightSettingsCancel?.addEventListener('click', closeLightSettings);
+    lightSettingsOk.addEventListener('click', saveLightSettings);
+    lightSettingsModal.addEventListener('click', (event) => {
+      if (event.target === lightSettingsModal) {
+        closeLightSettings();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && lightSettingsModal.classList.contains('is-visible')) {
+        closeLightSettings();
+      }
+    });
+  }
+
+  [lightFixedAction, lightFixedTime].forEach((control) => {
+    control?.addEventListener('focus', () => {
+      if (lightScheduleModeFixed) lightScheduleModeFixed.checked = true;
+    });
+    control?.addEventListener('change', () => {
+      if (lightScheduleModeFixed) lightScheduleModeFixed.checked = true;
+    });
+  });
+
+  [lightDurationPreset, lightDurationCustom].forEach((control) => {
+    control?.addEventListener('focus', () => {
+      if (lightScheduleModeDuration) lightScheduleModeDuration.checked = true;
+    });
+    control?.addEventListener('change', () => {
+      if (lightScheduleModeDuration) lightScheduleModeDuration.checked = true;
+    });
+  });
+
+  if (lightDurationPreset && lightDurationCustom) {
+    const syncDurationCustomState = () => {
+      lightDurationCustom.disabled = lightDurationPreset.value !== 'custom';
+      lightDurationCustom.classList.toggle('opacity-50', lightDurationCustom.disabled);
+    };
+    lightDurationPreset.addEventListener('change', syncDurationCustomState);
+    syncDurationCustomState();
+  }
+
+  armLightSchedule();
 
   const updateFanUi = (isOn) => {
     const speed = fanSpeedSlider?.value || '0';
