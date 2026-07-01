@@ -10,6 +10,13 @@
     .card-shadow {
       box-shadow: 0 8px 24px -12px rgba(42, 94, 169, 0.22), 0 2px 4px -1px rgba(15, 23, 42, 0.05);
     }
+    .system-graphic-card {
+      padding-bottom: 0;
+    }
+    .system-graphic-house {
+      margin-top: auto;
+      margin-bottom: 0;
+    }
     .toggle-checkbox:checked + .toggle-label {
       background-color: #2a5ea9;
     }
