@@ -469,41 +469,6 @@
       font-size: 0.78em;
     }
 
-    .top-navigation {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      min-width: min(100%, 34rem);
-      max-width: 100%;
-      overflow-x: auto;
-      scrollbar-width: thin;
-    }
-
-    .top-navigation a {
-      min-height: 2.5rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.55rem 0.8rem;
-      border-radius: 0.75rem;
-      color: #2a5ea9;
-      font-size: 0.84rem;
-      font-weight: 700;
-      white-space: nowrap;
-      transition: background-color 120ms ease, color 120ms ease;
-    }
-
-    .top-navigation a:hover,
-    .top-navigation a:focus-visible {
-      background: #eaf2fb;
-      outline: none;
-    }
-
-    .top-navigation a.is-active {
-      background: #2a5ea9;
-      color: #ffffff;
-    }
-
     .header-actions {
       display: flex;
       align-items: center;
@@ -577,10 +542,6 @@
         align-items: flex-start;
       }
 
-      .top-navigation {
-        order: 3;
-        flex-basis: 100%;
-      }
     }
 
     @media (max-width: 720px) {
