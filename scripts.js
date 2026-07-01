@@ -665,11 +665,22 @@ document.addEventListener('DOMContentLoaded', function() {
     lightTopic: 'mekongstem/smart-home/sensor/light',
     lightStateTopic: 'mekongstem/smart-home/light',
     autoLightTopic: 'mekongstem/smart-home/auto-light',
+    deviceStateTopic: 'mekongstem/smart-home/state',
+    webAckTopic: 'mekongstem/smart-home/state/ack',
   };
   const dashboardStateUrl = window.__DASHBOARD_STATE_URL__ || '';
+  const espHandshakeConfig = {
+    connectMessage: 'CONNECT',
+    ackMessage: 'WEB_ACK',
+    waitTimeoutMs: 12000,
+    staleTimeoutMs: 18000,
+  };
   let mqttClient = null;
   let isMqttConnected = false;
   let pendingMqttMessages = [];
+  let espHandshakeTimer = null;
+  let espStaleTimer = null;
+  let lastEspHandshakeAt = 0;
   let motionResetTimer = null;
   let lastMotionAlertTime = 0;
   let lastGasAlertTime = 0;
@@ -682,6 +693,73 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!mqttConnectionStatus) return;
     mqttConnectionStatus.textContent = label;
     mqttConnectionStatus.style.color = color;
+  };
+
+  const clearEspHandshakeTimers = () => {
+    if (espHandshakeTimer) {
+      clearTimeout(espHandshakeTimer);
+      espHandshakeTimer = null;
+    }
+
+    if (espStaleTimer) {
+      clearTimeout(espStaleTimer);
+      espStaleTimer = null;
+    }
+  };
+
+  const waitForEspHandshake = (statusLabel = 'Broker OK, đang chờ ESP32...') => {
+    clearEspHandshakeTimers();
+    lastEspHandshakeAt = 0;
+
+    if (!isMqttConnected) return;
+
+    if (statusLabel) {
+      updateMqttStatus(statusLabel, '#7ca8ea');
+    }
+
+    espHandshakeTimer = setTimeout(() => {
+      if (!lastEspHandshakeAt && isMqttConnected) {
+        updateMqttStatus('Chưa thấy tín hiệu ESP32', '#b45309');
+      }
+    }, espHandshakeConfig.waitTimeoutMs);
+  };
+
+  const markEspConnected = () => {
+    if (espHandshakeTimer) {
+      clearTimeout(espHandshakeTimer);
+      espHandshakeTimer = null;
+    }
+
+    if (espStaleTimer) {
+      clearTimeout(espStaleTimer);
+    }
+
+    lastEspHandshakeAt = Date.now();
+    updateMqttStatus('Đã kết nối ESP32', '#48a92a');
+
+    espStaleTimer = setTimeout(() => {
+      if (isMqttConnected && Date.now() - lastEspHandshakeAt >= espHandshakeConfig.staleTimeoutMs) {
+        updateMqttStatus('Mất tín hiệu ESP32', '#b45309');
+        waitForEspHandshake('');
+      }
+    }, espHandshakeConfig.staleTimeoutMs);
+  };
+
+  const handleEspStateMessage = (message) => {
+    const normalizedMessage = String(message || '').trim().toUpperCase();
+
+    if (normalizedMessage !== espHandshakeConfig.connectMessage) return;
+
+    updateMqttStatus('ESP32 OK, đang gửi phản hồi...', '#7ca8ea');
+    publishMqttMessage(mqttConfig.webAckTopic, espHandshakeConfig.ackMessage, (error) => {
+      if (error) {
+        updateMqttStatus('Lỗi gửi phản hồi ESP32', '#b45309');
+        console.warn('MQTT publish ACK error:', error.message);
+        return;
+      }
+
+      markEspConnected();
+    });
   };
 
   const persistControlState = (patch) => {
@@ -721,26 +799,37 @@ document.addEventListener('DOMContentLoaded', function() {
       isMqttConnected = true;
       updateMqttStatus('MQTT đã kết nối', '#48a92a');
       mqttClient.subscribe([
+        mqttConfig.deviceStateTopic,
         mqttConfig.motionTopic,
         mqttConfig.gasTopic,
         mqttConfig.humidityTopic,
         mqttConfig.temperatureTopic,
         mqttConfig.lightTopic,
-      ], { qos: 0 });
+      ], { qos: 0 }, (error) => {
+        if (error) {
+          updateMqttStatus('Lỗi nghe topic ESP32', '#b45309');
+          console.warn('MQTT subscribe error:', error.message);
+          return;
+        }
+
+        waitForEspHandshake();
+      });
       if (pendingMqttMessages.length) {
         const messages = [...pendingMqttMessages];
         pendingMqttMessages = [];
-        messages.forEach(({ topic, message }) => publishMqttMessage(topic, message));
+        messages.forEach(({ topic, message, onPublished }) => publishMqttMessage(topic, message, onPublished));
       }
     });
 
     mqttClient.on('reconnect', () => {
       isMqttConnected = false;
+      clearEspHandshakeTimers();
       updateMqttStatus('Đang kết nối lại...', '#b45309');
     });
 
     mqttClient.on('close', () => {
       isMqttConnected = false;
+      clearEspHandshakeTimers();
       updateMqttStatus('MQTT mất kết nối', '#b45309');
     });
 
@@ -752,7 +841,9 @@ document.addEventListener('DOMContentLoaded', function() {
     mqttClient.on('message', (topic, payload) => {
       const message = payload.toString().trim();
 
-      if (topic === mqttConfig.motionTopic) {
+      if (topic === mqttConfig.deviceStateTopic) {
+        handleEspStateMessage(message);
+      } else if (topic === mqttConfig.motionTopic) {
         handleMotionMessage(message);
       } else if (topic === mqttConfig.gasTopic) {
         updateGas(message);
@@ -766,17 +857,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  const publishMqttMessage = (topic, message) => {
+  const publishMqttMessage = (topic, message, onPublished) => {
     connectMqtt();
 
     if (!mqttClient || !isMqttConnected) {
-      pendingMqttMessages.push({ topic, message });
+      pendingMqttMessages.push({ topic, message, onPublished });
       return;
     }
 
     mqttClient.publish(topic, message, {
       qos: 0,
       retain: false,
+    }, (error) => {
+      if (typeof onPublished === 'function') {
+        onPublished(error || null);
+      }
     });
     console.info('MQTT publish:', topic, message);
   };
