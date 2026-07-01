@@ -113,22 +113,22 @@
 </div>
 <div class="grid grid-cols-3 gap-4">
 <!-- Light Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center justify-between gap-4 min-h-[12.75rem] border-b-4 border-mekong-blue relative" id="lightControlCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center justify-between gap-4 min-h-[12.75rem] relative" id="lightControlCard">
 <button class="light-settings-trigger absolute top-2 left-2" id="lightSettingsButton" type="button" aria-label="Mở cài đặt hẹn giờ đèn" aria-controls="lightSettingsModal" aria-expanded="false">
 <i class="fa-solid fa-gear"></i>
 </button>
 <button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn đèn" aria-controls="helpPopover" aria-expanded="false" data-help-key="light">
 <i class="fa-solid fa-circle-question"></i>
 </button>
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="lightControlIcon">
+<div class="w-10 h-10 bg-[#dbe6f5] text-white rounded-full flex items-center justify-center" id="lightControlIcon">
 <i class="fa-solid fa-lightbulb"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">Đèn</p>
-<p class="text-xs text-mekong-blue" id="lightControlStatus">Bật</p>
+<p class="text-xs text-slate-400" id="lightControlStatus">Tắt</p>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only toggle-checkbox" id="lightToggle" type="checkbox"/>
+<input class="sr-only toggle-checkbox" id="lightToggle" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
 <div class="flex items-center gap-2">
@@ -169,16 +169,16 @@
 <p class="light-schedule-notice fan-schedule-notice" id="fanScheduleNotice" aria-live="polite"></p>
 </div>
 <!-- LED RGB Toggle -->
-<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 border-b-4 border-mekong-blue relative" id="rgbLedCard">
+<div class="bg-white p-4 rounded-2xl card-shadow flex flex-col items-center gap-2 relative" id="rgbLedCard">
 <button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn LED RGB" aria-controls="helpPopover" aria-expanded="false" data-help-key="rgb">
 <i class="fa-solid fa-circle-question"></i>
 </button>
-<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="rgbLedIcon">
+<div class="w-10 h-10 bg-[#dbe6f5] text-white rounded-full flex items-center justify-center" id="rgbLedIcon">
 <i class="fa-solid fa-lightbulb"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">LED RGB</p>
-<p class="text-xs text-mekong-blue" id="rgbLedStatus">Xanh dương</p>
+<p class="text-xs text-slate-400" id="rgbLedStatus">Tắt</p>
 </div>
 <div aria-label="Chọn màu LED RGB" class="honeycomb-picker" role="radiogroup">
 <div class="honeycomb-row">
@@ -198,7 +198,7 @@
 </div>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
-<input checked="" class="sr-only toggle-checkbox" type="checkbox"/>
+<input class="sr-only toggle-checkbox" type="checkbox"/>
 <div class="w-10 h-5 bg-gray-200 rounded-full toggle-label transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
 </label>
 </div>
@@ -223,12 +223,12 @@
 <button class="help-trigger absolute top-2 right-2" type="button" aria-label="Mở hướng dẫn cửa tự động" aria-controls="helpPopover" aria-expanded="false" data-help-key="auto-door">
 <i class="fa-solid fa-circle-question"></i>
 </button>
-<div class="w-10 h-10 bg-mekong-brown text-white rounded-full flex items-center justify-center" id="autoDoorIcon">
+<div class="w-10 h-10 bg-mekong-blue text-white rounded-full flex items-center justify-center" id="autoDoorIcon">
 <i class="fa-solid fa-door-open"></i>
 </div>
 <div class="text-center">
 <p class="text-xs font-semibold">Cửa tự động</p>
-<p class="text-xs text-slate-400" id="autoDoorStatus">Đóng</p>
+<p class="text-xs text-mekong-blue" id="autoDoorStatus">Bật</p>
 </div>
 <label class="relative inline-flex items-center cursor-pointer">
 <input checked="" class="sr-only toggle-checkbox" id="autoDoorToggle" type="checkbox"/>

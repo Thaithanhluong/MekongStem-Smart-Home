@@ -1174,6 +1174,14 @@ document.addEventListener('DOMContentLoaded', function() {
     persistAlertsState();
   };
 
+  const updateRgbOffUi = () => {
+    rgbStatus.textContent = 'Tắt';
+    rgbStatus.style.color = '#5d6775';
+    rgbIcon.style.backgroundColor = '#dbe6f5';
+    rgbCard.style.borderBottomColor = '#dbe6f5';
+    rgbCard.classList.remove('border-b-4', 'border-mekong-blue');
+  };
+
   const setRgbColor = (button, shouldPublish = true) => {
     const color = button.dataset.color || '#2a5ea9';
     const name = button.dataset.name || 'Tùy chọn';
@@ -1186,16 +1194,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     button.classList.add('is-selected');
     button.setAttribute('aria-checked', 'true');
-    rgbIcon.style.backgroundColor = color;
-    rgbCard.style.borderBottomColor = color;
-
     if (!rgbToggle || rgbToggle.checked) {
       rgbStatus.textContent = name;
       rgbStatus.style.color = color;
+      rgbIcon.style.backgroundColor = color;
+      rgbCard.style.borderBottomColor = color;
+      rgbCard.classList.add('border-b-4');
       if (shouldPublish) {
         sendRgbColor(color);
         sendRgbState(true);
       }
+    } else {
+      updateRgbOffUi();
     }
 
     persistControlState({
@@ -2088,10 +2098,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (rgbToggle.checked && selected) {
       setRgbColor(selected);
     } else {
-      rgbStatus.textContent = 'Tắt';
-      rgbStatus.style.color = '#5d6775';
-      rgbIcon.style.backgroundColor = '#dbe6f5';
-      rgbCard.style.borderBottomColor = '#dbe6f5';
+      updateRgbOffUi();
       sendRgbState(false);
       persistControlState({ rgbOn: false });
     }
