@@ -648,24 +648,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (!rgbCard || !rgbIcon || !rgbStatus || !colorButtons.length) return;
 
+  const mqttBaseTopic = 'mekongstem/smart-home/esp32s3-luong872';
   const mqttConfig = {
     url: 'wss://test.mosquitto.org:8081/mqtt',
-    rgbStateTopic: 'mekongstem/smart-home/led-rgb/state/set',
-    rgbColorTopic: 'mekongstem/smart-home/led-rgb/color/set',
-    fanStateTopic: 'mekongstem/smart-home/fan/state/set',
-    fanSpeedTopic: 'mekongstem/smart-home/fan/speed/set',
-    buzzerStateTopic: 'mekongstem/smart-home/buzzer',
-    buzzerDetectStateTopic: 'mekongstem/smart-home/buzzer-when-detect',
-    mainDoorStateTopic: 'mekongstem/smart-home/door/main/state/set',
-    autoDoorStateTopic: 'mekongstem/smart-home/door/auto/state/set',
-    motionTopic: 'mekongstem/smart-home/motion/status',
-    gasTopic: 'mekongstem/smart-home/sensor/gas',
-    humidityTopic: 'mekongstem/smart-home/sensor/humidity',
-    temperatureTopic: 'mekongstem/smart-home/sensor/temperature',
-    lightTopic: 'mekongstem/smart-home/sensor/light',
-    lightStateTopic: 'mekongstem/smart-home/light',
-    autoLightTopic: 'mekongstem/smart-home/auto-light',
-    deviceStateTopic: 'mekongstem/smart-home/state',
+    deviceCmdTopic: `${mqttBaseTopic}/cmd/device`,
+    rgbStateTopic: `${mqttBaseTopic}/cmd/led-rgb/state`,
+    rgbColorTopic: `${mqttBaseTopic}/cmd/led-rgb/color`,
+    fanStateTopic: `${mqttBaseTopic}/cmd/fan/state`,
+    fanSpeedTopic: `${mqttBaseTopic}/cmd/fan/speed`,
+    buzzerStateTopic: `${mqttBaseTopic}/cmd/buzzer/state`,
+    buzzerDetectStateTopic: `${mqttBaseTopic}/cmd/buzzer/detect`,
+    mainDoorStateTopic: `${mqttBaseTopic}/cmd/door/main`,
+    autoDoorStateTopic: `${mqttBaseTopic}/cmd/door/rfid`,
+    lightStateTopic: `${mqttBaseTopic}/cmd/light/state`,
+    autoLightTopic: `${mqttBaseTopic}/cmd/light/auto`,
+    deviceStateTopic: `${mqttBaseTopic}/state/device`,
+    motionTopic: `${mqttBaseTopic}/state/motion`,
+    rgbStatusTopic: `${mqttBaseTopic}/state/led-rgb`,
+    fanStatusTopic: `${mqttBaseTopic}/state/fan`,
+    buzzerStatusTopic: `${mqttBaseTopic}/state/buzzer`,
+    buzzerDetectStatusTopic: `${mqttBaseTopic}/state/buzzer/detect`,
+    mainDoorStatusTopic: `${mqttBaseTopic}/state/door/main`,
+    autoDoorStatusTopic: `${mqttBaseTopic}/state/door/rfid`,
+    lightStatusTopic: `${mqttBaseTopic}/state/light`,
+    autoLightStatusTopic: `${mqttBaseTopic}/state/light/auto`,
+    gasTopic: `${mqttBaseTopic}/sensor/gas`,
+    humidityTopic: `${mqttBaseTopic}/sensor/humidity`,
+    temperatureTopic: `${mqttBaseTopic}/sensor/temperature`,
+    lightTopic: `${mqttBaseTopic}/sensor/light`,
   };
   const dashboardStateUrl = window.__DASHBOARD_STATE_URL__ || '';
   const espHandshakeConfig = {
@@ -718,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isMqttConnected) return;
 
     updateMqttStatus('Đang gọi ESP32...', '#7ca8ea');
-    publishMqttMessage(mqttConfig.deviceStateTopic, espHandshakeConfig.questionMessage, (error) => {
+    publishMqttMessage(mqttConfig.deviceCmdTopic, espHandshakeConfig.questionMessage, (error) => {
       if (error) {
         updateMqttStatus('Lỗi gửi câu hỏi ESP32', '#b45309');
         console.warn('MQTT publish presence question error:', error.message);
@@ -783,9 +793,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const normalizedMessage = String(message || '').trim().toUpperCase();
 
     if (normalizedMessage === espHandshakeConfig.questionMessage) return;
-    if (normalizedMessage !== espHandshakeConfig.answerMessage) return;
+    if (normalizedMessage !== espHandshakeConfig.answerMessage && normalizedMessage !== '1') return;
 
     markEspConnected();
+  };
+
+  const getMqttSubscribeTopics = () => [
+    mqttConfig.deviceStateTopic,
+    mqttConfig.motionTopic,
+    mqttConfig.gasTopic,
+    mqttConfig.humidityTopic,
+    mqttConfig.temperatureTopic,
+    mqttConfig.lightTopic,
+    mqttConfig.rgbStatusTopic,
+    mqttConfig.fanStatusTopic,
+    mqttConfig.buzzerStatusTopic,
+    mqttConfig.buzzerDetectStatusTopic,
+    mqttConfig.mainDoorStatusTopic,
+    mqttConfig.autoDoorStatusTopic,
+    mqttConfig.lightStatusTopic,
+    mqttConfig.autoLightStatusTopic,
+  ];
+
+  const readBinaryState = (message) => {
+    const normalized = String(message || '').trim().toUpperCase();
+    if (['1', 'ON', 'TRUE', 'YES', 'OPEN', 'DETECTED', 'HERE'].includes(normalized)) return true;
+    if (['0', 'OFF', 'FALSE', 'NO', 'CLOSE', 'CLOSED', 'CLEAR', 'NONE'].includes(normalized)) return false;
+    return null;
+  };
+
+  const applyControlStateMessage = (topic, message) => {
+    const state = readBinaryState(message);
+    if (state === null) return;
+
+    if (topic === mqttConfig.rgbStatusTopic) {
+      if (state) {
+        if (rgbToggle && rgbToggle.checked !== true) rgbToggle.checked = true;
+        setRgbColorByValue(readDashboardState().controls?.rgbColor || '#005bff', false);
+      } else {
+        updateRgbOffUi();
+      }
+    } else if (topic === mqttConfig.fanStatusTopic) {
+      if (fanToggle && fanToggle.checked !== state) fanToggle.checked = state;
+      updateFanUi(state);
+    } else if (topic === mqttConfig.buzzerStatusTopic) {
+      updateBuzzerUi(state);
+    } else if (topic === mqttConfig.buzzerDetectStatusTopic) {
+      updateBuzzerDetectUi(state);
+    } else if (topic === mqttConfig.mainDoorStatusTopic) {
+      updateMainDoorUi(state);
+    } else if (topic === mqttConfig.autoDoorStatusTopic) {
+      updateAutoDoorUi(state);
+    } else if (topic === mqttConfig.lightStatusTopic) {
+      updateLightControlUi(state);
+    } else if (topic === mqttConfig.autoLightStatusTopic) {
+      updateAutoLightUi(state);
+    }
   };
 
   const persistControlState = (patch) => {
@@ -824,14 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
     mqttClient.on('connect', () => {
       isMqttConnected = true;
       updateMqttStatus('Broker đã kết nối', '#7ca8ea');
-      mqttClient.subscribe([
-        mqttConfig.deviceStateTopic,
-        mqttConfig.motionTopic,
-        mqttConfig.gasTopic,
-        mqttConfig.humidityTopic,
-        mqttConfig.temperatureTopic,
-        mqttConfig.lightTopic,
-      ], { qos: 0 }, (error) => {
+      mqttClient.subscribe(getMqttSubscribeTopics(), { qos: 0 }, (error) => {
         if (error) {
           updateMqttStatus('Lỗi nghe topic ESP32', '#b45309');
           console.warn('MQTT subscribe error:', error.message);
@@ -880,6 +936,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTemperature(message);
       } else if (topic === mqttConfig.lightTopic) {
         updateLight(message);
+      } else {
+        applyControlStateMessage(topic, message);
       }
     });
   };
