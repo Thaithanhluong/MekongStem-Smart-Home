@@ -674,6 +674,8 @@ document.addEventListener('DOMContentLoaded', function() {
     ackMessage: 'WEB_ACK',
     waitTimeoutMs: 12000,
     staleTimeoutMs: 18000,
+    ackRepeatCount: 4,
+    ackRepeatIntervalMs: 600,
   };
   let mqttClient = null;
   let isMqttConnected = false;
@@ -745,21 +747,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }, espHandshakeConfig.staleTimeoutMs);
   };
 
+  const sendEspAckBurst = () => {
+    let sentCount = 0;
+    let hasMarkedConnected = false;
+
+    const sendAck = () => {
+      sentCount += 1;
+      publishMqttMessage(mqttConfig.webAckTopic, espHandshakeConfig.ackMessage, (error) => {
+        if (error) {
+          updateMqttStatus('Lỗi gửi phản hồi ESP32', '#b45309');
+          console.warn('MQTT publish ACK error:', error.message);
+          return;
+        }
+
+        if (!hasMarkedConnected) {
+          hasMarkedConnected = true;
+          markEspConnected();
+        }
+      });
+
+      if (sentCount < espHandshakeConfig.ackRepeatCount) {
+        setTimeout(sendAck, espHandshakeConfig.ackRepeatIntervalMs);
+      }
+    };
+
+    sendAck();
+  };
+
   const handleEspStateMessage = (message) => {
     const normalizedMessage = String(message || '').trim().toUpperCase();
 
     if (normalizedMessage !== espHandshakeConfig.connectMessage) return;
 
     updateMqttStatus('ESP32 OK, đang gửi phản hồi...', '#7ca8ea');
-    publishMqttMessage(mqttConfig.webAckTopic, espHandshakeConfig.ackMessage, (error) => {
-      if (error) {
-        updateMqttStatus('Lỗi gửi phản hồi ESP32', '#b45309');
-        console.warn('MQTT publish ACK error:', error.message);
-        return;
-      }
-
-      markEspConnected();
-    });
+    sendEspAckBurst();
   };
 
   const persistControlState = (patch) => {
@@ -840,6 +861,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     mqttClient.on('message', (topic, payload) => {
       const message = payload.toString().trim();
+      console.info('MQTT receive:', topic, message);
 
       if (topic === mqttConfig.deviceStateTopic) {
         handleEspStateMessage(message);
