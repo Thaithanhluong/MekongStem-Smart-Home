@@ -903,8 +903,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.info('MQTT publish:', topic, message);
   };
 
+  const toBinaryStatePayload = (isOn) => (isOn ? '1' : '0');
+
   const sendRgbState = (isOn) => {
-    publishMqttMessage(mqttConfig.rgbStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.rgbStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendRgbColor = (color) => {
@@ -912,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const sendFanState = (isOn) => {
-    publishMqttMessage(mqttConfig.fanStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.fanStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendFanSpeed = (speed) => {
@@ -920,27 +922,27 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const sendBuzzerState = (isOn) => {
-    publishMqttMessage(mqttConfig.buzzerStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.buzzerStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendBuzzerDetectState = (isOn) => {
-    publishMqttMessage(mqttConfig.buzzerDetectStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.buzzerDetectStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendMainDoorState = (isOn) => {
-    publishMqttMessage(mqttConfig.mainDoorStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.mainDoorStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendAutoDoorState = (isOn) => {
-    publishMqttMessage(mqttConfig.autoDoorStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.autoDoorStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendLightState = (isOn) => {
-    publishMqttMessage(mqttConfig.lightStateTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.lightStateTopic, toBinaryStatePayload(isOn));
   };
 
   const sendAutoLightState = (isOn) => {
-    publishMqttMessage(mqttConfig.autoLightTopic, isOn ? 'ON' : 'OFF');
+    publishMqttMessage(mqttConfig.autoLightTopic, toBinaryStatePayload(isOn));
   };
 
   const getFixedScheduleTarget = (timeValue) => {
