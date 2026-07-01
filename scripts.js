@@ -2185,10 +2185,10 @@ document.addEventListener('DOMContentLoaded', function() {
       ],
     },
     'auto-door': {
-      title: 'Cửa tự động',
+      title: 'Chìa khóa RFID',
       icon: 'fa-door-open',
       items: [
-        'Bật để cửa tự động xử lý theo logic của bộ điều khiển.',
+        'Bật để chìa khóa RFID xử lý theo logic của bộ điều khiển.',
         'Tắt khi muốn kiểm soát thủ công.',
         'Màu xanh là đang bật, màu xám là đang tắt.',
       ],
