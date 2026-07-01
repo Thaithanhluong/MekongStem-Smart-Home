@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const mqttBaseTopic = 'mekongstem/smart-home/esp32s3-luong872';
   const mqttConfig = {
-    url: 'wss://test.mosquitto.org:8081/mqtt',
+    url: 'wss://broker.emqx.io:8084/mqtt',
     deviceCmdTopic: `${mqttBaseTopic}/cmd/device`,
     rgbStateTopic: `${mqttBaseTopic}/cmd/led-rgb/state`,
     rgbColorTopic: `${mqttBaseTopic}/cmd/led-rgb/color`,
@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   let mqttClient = null;
   let isMqttConnected = false;
-  let pendingMqttMessages = [];
+  let pendingMqttMessages = new Map();
   let espQuestionTimer = null;
   let espResponseTimer = null;
   let espStaleTimer = null;
@@ -896,9 +896,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         scheduleEspPresenceCheck();
       });
-      if (pendingMqttMessages.length) {
-        const messages = [...pendingMqttMessages];
-        pendingMqttMessages = [];
+      if (pendingMqttMessages.size) {
+        const messages = Array.from(pendingMqttMessages.values());
+        pendingMqttMessages.clear();
         messages.forEach(({ topic, message, onPublished }) => publishMqttMessage(topic, message, onPublished));
       }
     });
@@ -946,7 +946,7 @@ document.addEventListener('DOMContentLoaded', function() {
     connectMqtt();
 
     if (!mqttClient || !isMqttConnected) {
-      pendingMqttMessages.push({ topic, message, onPublished });
+      pendingMqttMessages.set(topic, { topic, message, onPublished });
       return;
     }
 
