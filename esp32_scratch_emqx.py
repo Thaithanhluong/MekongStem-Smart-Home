@@ -205,8 +205,23 @@ yolo_uno.deinit = deinit
 async def task_on_event_u_F_P_I():
   global khi_gas, RFID, Nhi_E1_BB_87t__C4_91_E1_BB_99, last_fan_state, speed, light, AUTO_LIGHT, buzzer_when_detect, C_E1_BB_ADa, ARE_U_HERE, last_LED_state, color, _C4_90_E1_BB_99__E1_BA_A9m, _C3_81nh_s_C3_A1ng
   while True:
-    await asleep_ms(100)
-    if (not rfid.scan_and_check("rfids_1")):
+    await asleep_ms(250)
+    try:
+      card_ok = rfid.scan_and_check("rfids_1")
+    except OSError as e:
+      print('RFID error:', e)
+      await asleep_ms(1000)
+      continue
+    if card_ok:
+      if RFID == '1':
+        neopix.show(0, hex_to_rgb('#00ff00'))
+        servo_D2.servo_write(100)
+        buzzer_D7.write_analog(round(translate(70, 0, 100, 0, 1023)))
+        await asleep_ms(100)
+        buzzer_D7.write_analog(round(translate(0, 0, 100, 0, 1023)))
+        await asleep_ms(4000)
+        servo_D2.servo_write(0)
+    else:
       neopix.show(0, hex_to_rgb('#000000'))
       neopix.show(0, hex_to_rgb('#ff0000'))
       await asleep_ms(2000)
@@ -225,20 +240,6 @@ async def task_I_j_x_t():
       create_task(task_on_message_1())
     elif khi_gas <= 200:
       gas_alarm_active = False
-
-async def task_on_event_J_k_y_L():
-  global khi_gas, RFID, Nhi_E1_BB_87t__C4_91_E1_BB_99, last_fan_state, speed, light, AUTO_LIGHT, buzzer_when_detect, C_E1_BB_ADa, ARE_U_HERE, last_LED_state, color, _C4_90_E1_BB_99__E1_BA_A9m, _C3_81nh_s_C3_A1ng
-  while True:
-    await asleep_ms(100)
-    if rfid.scan_and_check("rfids_1"):
-      if RFID == '1':
-        neopix.show(0, hex_to_rgb('#00ff00'))
-        servo_D2.servo_write(100)
-        buzzer_D7.write_analog(round(translate(70, 0, 100, 0, 1023)))
-        await asleep_ms(100)
-        buzzer_D7.write_analog(round(translate(0, 0, 100, 0, 1023)))
-        await asleep_ms(4000)
-        servo_D2.servo_write(0)
 
 async def task_on_message_1():
   global khi_gas, RFID, Nhi_E1_BB_87t__C4_91_E1_BB_99, last_fan_state, speed, light, AUTO_LIGHT, buzzer_when_detect, C_E1_BB_ADa, ARE_U_HERE, last_LED_state, color, _C4_90_E1_BB_99__E1_BA_A9m, _C3_81nh_s_C3_A1ng
@@ -318,7 +319,6 @@ async def setup():
 
   create_task(task_on_event_u_F_P_I())
   create_task(task_I_j_x_t())
-  create_task(task_on_event_J_k_y_L())
   create_task(task_N_h_S_S())
   create_task(task_on_event_R_g_c_l())
   create_task(task_F_y_v_l())
